@@ -3,7 +3,6 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="NotificationSharring.app" target="21" />
-      <module name="Phonotify.app" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>
