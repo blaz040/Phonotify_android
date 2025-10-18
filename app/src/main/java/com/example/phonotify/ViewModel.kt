@@ -1,6 +1,7 @@
 package com.example.phonotify
 
 import android.app.Application
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
@@ -16,23 +17,28 @@ class ViewModel(application: Application): AndroidViewModel(application) {
 
     fun startBLE(){
         Log.d("notListener","Sent START for notification")
-        Intent(application, CommunicationService::class.java).also{
-            it.action = CommunicationService.START
-            application.startService(it)
-        }
+        send(CommunicationService.START)
     }
     fun stopBLE(){
         Log.d("notListener","Sent STOP for notification")
+        send(CommunicationService.STOP)
+    }
+    fun disconnectDevice(device: BluetoothDevice){
+        val address = device.address
         Intent(application, CommunicationService::class.java).also{
-            it.action = CommunicationService.STOP
+            it.action = CommunicationService.DISCONNECT_DEVICE
+            it.putExtra("device_address",address)
+            application.startService(it)
+        }
+    }
+    private fun send(action: String){
+        Intent(application, CommunicationService::class.java).also{
+            it.action = action
             application.startService(it)
         }
     }
     fun resendRecentNotification(){
-        Intent(application, CommunicationService::class.java).also{
-            it.action = CommunicationService.RESEND
-            application.startService(it)
-        }
+        send(CommunicationService.RESEND)
     }
     init {
         viewModelScope.launch{

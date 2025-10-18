@@ -28,6 +28,10 @@ class BLEManager(
     //private val bluetoothLeScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
     private val bluetoothLeAdvertiser by lazy { bluetoothAdapter.bluetoothLeAdvertiser}
     private var isAdvertising = false
+        set(value) {
+            ViewModelData.setAdvertising(value);
+            field = value
+        }
     private var connection = false
 
     private var connectedDevices: MutableList<BluetoothDevice> = mutableListOf()
@@ -40,7 +44,7 @@ class BLEManager(
 
     private val descriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
-    // --------------------------------------GATT CALLBACk--------------------------------------------
+    // --------------------------------------GATT CALLBACK--------------------------------------------
     private val gattServerCallback = object: BluetoothGattServerCallback(){
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             if(newState == BluetoothProfile.STATE_CONNECTED){
@@ -64,6 +68,11 @@ class BLEManager(
                 //ViewModelData._connectionStatus.postValue(connection)
                 advertise()
             }
+            Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(
+                BluetoothProfile.GATT_SERVER)}")
+            Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(
+                BluetoothProfile.GATT)}")
+
             super.onConnectionStateChange(device, status, newState)
         }
 
@@ -114,18 +123,25 @@ class BLEManager(
         .setIncludeDeviceName(true)
         .build()
     private val advertiseCallback = object: AdvertiseCallback(){
-        override fun onStartFailure(errorCode: Int) {
-            super.onStartFailure(errorCode)
-            isAdvertising = false
-            ViewModelData.setAdvertising(isAdvertising)
-            Log.d(TAG,"Advertising failure: $errorCode")
-        }
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             super.onStartSuccess(settingsInEffect)
-            isAdvertising = true
 
-            ViewModelData.setAdvertising(isAdvertising)
+            isAdvertising = true
             Log.d(TAG,"Advertising success")
+        }
+        override fun onStartFailure(errorCode: Int) {
+            super.onStartFailure(errorCode)
+
+            isAdvertising = false
+            val text: String = when(errorCode){
+                ADVERTISE_FAILED_DATA_TOO_LARGE -> "Data too Large"
+                ADVERTISE_FAILED_TOO_MANY_ADVERTISERS ->{ isAdvertising = true;" TOO Many advertisers"}
+                ADVERTISE_FAILED_ALREADY_STARTED -> { isAdvertising = true; "Advertise already started"}
+                ADVERTISE_FAILED_INTERNAL_ERROR -> "Internal Error"
+                ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "Not supported"
+                else-> "${errorCode}"
+            }
+            Log.d(TAG,"Advertising failure: $text")
         }
 
     }
@@ -137,8 +153,7 @@ class BLEManager(
         bluetoothGattServer.clearServices()
         Log.d(TAG,"adding Services")
         characteristics.forEach {
-            it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID,
-                BluetoothGattDescriptor.PERMISSION_WRITE))
+            it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
             notificationService.addCharacteristic(it)
         }
 
@@ -148,22 +163,33 @@ class BLEManager(
         advertise()
     }
     fun advertise(){
+        isAdvertising = true
+
         bluetoothLeAdvertiser.startAdvertising(advertisingSettings,advertiseData,advertiseCallback)
     }
     fun stop(){
-        bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
         isAdvertising = false
-        ViewModelData.setAdvertising(isAdvertising)
+        bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+
 
         bluetoothGattServer.clearServices()
         bluetoothGattServer.close()
+    }
+    fun disconnectDevice(address: String){
+        var device: BluetoothDevice? = null
+            connectedDevices.forEach {
+                if(it.address == address)
+                    device = it
+            }
+        if(device == null) Log.d(TAG,"Cant disconnect $address not found (NULL)")
+        else
+            bluetoothGattServer.cancelConnection(device)
     }
     fun sendNotification(nData: NotificationData): Boolean{
         val title = nData.title
         val text = nData.text
         val pckg = nData.pckg
         var succ = true
-        val data = title + "&"+ text + "&"+ pckg
         succ =  succ && titleCharacteristic.setValue(title)
         succ =  succ && contextCharacteristic.setValue(text)
         succ =  succ && packageCharacteristic.setValue(pckg)
@@ -173,196 +199,12 @@ class BLEManager(
         return succ
     }
     private fun notifyChar(){
-        connectedDevices.forEach {  device->
-            Log.d(TAG,"Notifying device: ${device.name}")
+        bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER).forEach { device->
+            Log.d(TAG,"Notifying device: ${device?.name} ${device?.address}")
             //characteristics.forEach { characteristic->
                 bluetoothGattServer.notifyCharacteristicChanged(device, notifyCompleteCharacteristic,false)
             //}
         }
+
     }
-    /*
-    fun disconnect() {
-        bluetoothGatt?.disconnect()
-    }
-    fun closeConnection() {
-        bluetoothGatt?.close()
-        bluetoothGatt = null
-    }
-    fun broadcastUpdate(action:String) {
-        val intent = Intent(action)
-            .setPackage(context.getPackageName());
-        context.sendBroadcast(intent)
-    }
-    fun connectToDevice(device: BluetoothDevice) {
-        // Disconnect from any previously connected device
-        disconnect()
-
-        val gattQueue = mutableListOf<() ->Unit>()
-        var gattQueueBusy = false
-
-        fun nextGattOperation() {
-            if(gattQueue.isNotEmpty() && !gattQueueBusy)
-            {
-                gattQueueBusy = true
-                gattQueue.removeAt(0).invoke()
-            }
-        }
-        // Attempt to connect to the GATT server
-        bluetoothGatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
-            // Callback for connection state changes
-            override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-                super.onConnectionStateChange(gatt, status, newState)
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    // Device connected
-                    Log.d("GATT_CONN", "Connected to GATT server.")
-                    gatt.discoverServices()
-
-                    broadcastUpdate(BluetoothBroadcastAction.CONNECTED)
-
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    // Device disconnected
-                    Log.d("GATT_CONN", "Disconnected from GATT server.")
-
-                    broadcastUpdate(BluetoothBroadcastAction.DISCONNECTED)
-
-                    closeConnection()
-                }
-            }
-            // Callback for services discovered
-            override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-                super.onServicesDiscovered(gatt, status)
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("GATT_CONN", "Services discovered successfully")
-                    //gatt.printGattTable()
-                    gatt.services.forEach {
-                        Log.d("GATT_CONN","service ${it.type}: ${it.uuid} discovered")
-                    }
-
-                    //Enable notifications for each characteristic in list
-                    env_characteristics_list.forEach {
-                        val tmpChar = gatt.getService(envService_UUID)?.getCharacteristic(it)
-                        if(tmpChar != null) {
-                            gattQueue.add { enableCharacteristicNotification(gatt, tmpChar) }
-                        }
-                    }
-                    other_characteristics_list.forEach {
-                        val tmpChar = gatt.getService(otherService_UUID)?.getCharacteristic(it)
-                        if(tmpChar != null) {
-                            gattQueue.add { enableCharacteristicNotification(gatt, tmpChar) }
-                        }
-                    }
-
-                    nextGattOperation()
-                } else {
-                    Log.e("GATT_CONN", "Service discovery failed with status: $status")
-                }
-            }
-
-            override fun onDescriptorWrite(gatt: BluetoothGatt?, descriptor: BluetoothGattDescriptor?, status: Int) {
-                super.onDescriptorWrite(gatt, descriptor, status)
-                gattQueueBusy = false
-                nextGattOperation()
-            }
-
-            private fun enableCharacteristicNotification(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-                gatt.setCharacteristicNotification(characteristic, true)
-                val descriptor = characteristic.getDescriptor(CCCD_UUID)
-                if (descriptor != null) {
-                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                    val writeSuccess = gatt.writeDescriptor(descriptor)
-                    Log.d("GATT_CONN", "Attempting to write CCCD for ${characteristic.uuid}: $writeSuccess")
-                } else {
-                    Log.e("GATT_CONN", "CCCD descriptor is NULL for characteristic: ${characteristic.uuid}. Continuing with next op.")
-                    gattQueueBusy = false
-                    nextGattOperation()
-                }
-            }
-            // Callback for characteristic read operations
-            override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: android.bluetooth.BluetoothGattCharacteristic, status: Int) {
-                //super.onCharacteristicRead(gatt, characteristic, status)
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val value = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16,0) // Get the byte array value
-                    Log.d("GATT_CON", "Characteristic ${characteristic.uuid} read: ${value}")
-                    // Process the read value here
-                } else {
-                    Log.d("GATT_CON", "Characteristic ${characteristic.uuid} read failed with status: $status")
-                }
-            }
-
-            override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
-                characteristic?.let { char -> onDataReceived(char) }
-            }
-
-            override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
-                super.onCharacteristicWrite(gatt, characteristic, status)
-                Log.d("GATT_WRITE","Writing to characteristic : $status")
-            }
-        })
-    }
-
-    fun calcAltitude(pressure: Float): Float {
-        val sea_press = SensorData.seaLevelPressure
-        val temp     = SensorData.seaLevelTemperature
-        //val temp = SensorData.temperature.getList().last().y
-        return round((((sea_press / pressure).pow(1 / 5.257f) - 1.0f) * (temp + 273.15f)) / 0.0065f)
-    }
-    fun onDataReceived(char: BluetoothGattCharacteristic) {
-        val shortFormat = BluetoothGattCharacteristic.FORMAT_UINT16
-        val intFormat = BluetoothGattCharacteristic.FORMAT_UINT32
-        when (char.uuid) {
-            temp_UUID -> {
-                val floatValue = char.getIntValue(shortFormat,0).toFloat()/100
-                SensorData.temperature.add(floatValue)
-                Log.d("GATT_NOTIFY", "Characteristic temp: $floatValue")
-            }
-            humidity_UUID -> {
-                val value = char.getIntValue(shortFormat,0)
-                SensorData.humidity.add(value)
-                Log.d("GATT_NOTIFY", "Characteristic humidity: $value ")
-            }
-            pressure_UUID ->{
-                val pressure = char.getIntValue(intFormat,0).toFloat()/100
-                SensorData.pressure.add(pressure)
-                SensorData.altitude.add(calcAltitude(pressure))
-
-                Log.d("GATT_NOTIFY", "Characteristic pressure: $pressure ")
-            }
-            IAQ_UUID -> {
-                val value = char.getIntValue(shortFormat,0)
-                SensorData.iaq.add(value)
-
-                Log.d("GATT_NOTIFY", "Characteristic IAQ: $value")
-            }
-            bVOC_UUID -> {
-                val floatValue = char.getIntValue(shortFormat,0).toFloat()/100
-                SensorData.voc.add(floatValue)
-                Log.d("GATT_NOTIFY", "Characteristic bVOC: $floatValue")
-            }
-            CO2_UUID -> {
-                val value = char.getIntValue(shortFormat,0)
-                SensorData.co2.add(value)
-                Log.d("GATT_NOTIFY", "Characteristic CO2: $value ")
-            }
-            step_UUID -> {
-                val value = char.getIntValue(shortFormat,0)
-                SensorData.steps.add(value)
-                Log.d("GATT_NOTIFY","Characteristic Steps: $value")
-            }
-            else -> {
-                Log.d("GATT_NOTIFY", "Characteristic Unknown")
-            }
-        }
-    }
-    fun send(value: Int)
-    {
-        val service = bluetoothGatt?.getService(otherService_UUID)
-        val commandChar = service?.getCharacteristic(messageReceiver_UUID)
-
-        if(commandChar == null) {bluetoothGatt?.printGattTable(); return}
-
-        commandChar?.setValue(value,BluetoothGattCharacteristic.FORMAT_UINT16,0)
-        val writeSuccess = bluetoothGatt?.writeCharacteristic(commandChar)
-        Log.d("BlE_WRITE","Attempting to write command: $value. Success: $writeSuccess")
-    }
-    */
 }

@@ -30,6 +30,7 @@ class CommunicationService: Service() {
             START -> start()
             STOP -> stop()
             RESEND -> resend()
+            DISCONNECT_DEVICE -> disconnectDevice(intent)
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -59,6 +60,11 @@ class CommunicationService: Service() {
         ble_api.stop()
         stopSelf()
     }
+    fun disconnectDevice(intent: Intent){
+        val address = intent.getStringExtra("device_address")
+        if(address != null)
+            ble_api.disconnectDevice(address)
+    }
     fun resend(){
         serviceScope.launch {
             ViewModelData.notyData.emit(latestNotification)
@@ -73,5 +79,6 @@ class CommunicationService: Service() {
         val START = "start"
         val STOP = "stop"
         val RESEND = "resend"
+        val DISCONNECT_DEVICE = "DC_device"
     }
 }

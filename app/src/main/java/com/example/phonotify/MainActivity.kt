@@ -22,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -84,13 +85,17 @@ class MainActivity : ComponentActivity() {
                         }
                         Row(Modifier.padding(10.dp)){
                             Text("Connected devices:")
-                            Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp).padding(0.dp,5.dp),){Box(
-                                Modifier.padding(10.dp)){
-                               val connectedDevices = ViewModelData.connectedDevices.observeAsState(mutableListOf()).value
-                                connectedDevices.forEach {
-                                    Text("${it.name}: ${it.address}")
+                            Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp).padding(0.dp,5.dp),){
+                                Box(Modifier.padding(10.dp)){
+                                    val connectedDevices = ViewModelData.connectedDevices.observeAsState(mutableListOf()).value
+                                    connectedDevices.forEach {
+                                        Row(verticalAlignment = Alignment.CenterVertically){
+                                            Text("${it.name}: ${it.address}")
+                                        //    TextButton({vm.disconnectDevice(it)}) { Text("X",color = Color.White)}
+                                        }
+                                    }
                                 }
-                            }}
+                            }
                         }
                     }
 
