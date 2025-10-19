@@ -46,14 +46,14 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column(modifier = Modifier.fillMaxSize().padding(innerPadding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                         Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            val checked = vm.main_switch_checked.observeAsState(false).value
                             Text("Turn ON: ")
                             Switch(
-                                checked = vm.main_switch_checked.value,
+                                checked = checked,
                                 onCheckedChange = {
-                                    vm.main_switch_checked.value = it
-                                    when(vm.main_switch_checked.value){
-                                        true -> vm.startBLE()
-                                        false -> vm.stopBLE()
+                                    when(checked){
+                                        false -> vm.startBLE()
+                                        true -> vm.stopBLE()
                                     }
                                 }
                             )
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                                     connectedDevices.forEach {
                                         Row(verticalAlignment = Alignment.CenterVertically){
                                             Text("${it.name}: ${it.address}")
-                                        //    TextButton({vm.disconnectDevice(it)}) { Text("X",color = Color.White)}
+                                            TextButton({vm.disconnectDevice(it)}) { Text("X",color = Color.White)}
                                         }
                                     }
                                 }

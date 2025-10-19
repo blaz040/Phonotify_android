@@ -14,8 +14,11 @@ import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.example.phonotify.ViewModelData
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
@@ -34,46 +37,52 @@ class BLEManager(
         }
     private var connection = false
 
-    private var connectedDevices: MutableList<BluetoothDevice> = mutableListOf()
+    private var connectedDevices: List<BluetoothDevice> =  listOf()
+        set(value) {
+            ViewModelData.setConnectedDevices(value)
+            field = value
+        }
     // -----------------------------------UUIDS-----------------------------------------------
     private val notificationServiceUUID= UUID.fromString("91d76000-ac7b-4d70-ab3a-8b87a357239e")
     private val titleCharacteristicUUID = UUID.fromString("91d76001-ac7b-4d70-ab3a-8b87a357239e")
     private val contextCharacteristicUUID = UUID.fromString("91d76002-ac7b-4d70-ab3a-8b87a357239e")
     private val packageCharacteristicUUID = UUID.fromString("91d76003-ac7b-4d70-ab3a-8b87a357239e")
     private val notifyCompleteUUID = UUID.fromString("91d76004-ac7b-4d70-ab3a-8b87a357239e")
+    private val disconnectUUID = UUID.fromString("91d76005-ac7b-4d70-ab3a-8b87a357239e")
 
     private val descriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
     // --------------------------------------GATT CALLBACK--------------------------------------------
     private val gattServerCallback = object: BluetoothGattServerCallback(){
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+            super.onConnectionStateChange(device, status, newState)
             if(newState == BluetoothProfile.STATE_CONNECTED){
                 Log.d(TAG,"Connected Name: ${device} ${device?.name} Addr: ${device?.address}")
-                if(device != null) {
+                /*if(device != null) {
                     connectedDevices.add(device)
                     ViewModelData.addDevice(device)
                 }
+                 */
                 connection = true
-                //ViewModelData._connectionStatus.postValue(connection)
             }
             else if(newState == BluetoothProfile.STATE_DISCONNECTED){
                 Log.d(TAG,"Disconnected Name: ${device?.name} Addr: ${device?.address} ")
-
+                /*
                 if(device != null) {
                     connectedDevices.remove(device)
                     ViewModelData.removeDevice(device)
                 }
+
+                 */
                 if(connectedDevices.size == 0)
                     connection = false
-                //ViewModelData._connectionStatus.postValue(connection)
                 advertise()
             }
-            Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(
-                BluetoothProfile.GATT_SERVER)}")
-            Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(
-                BluetoothProfile.GATT)}")
+            connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
+            Log.d(TAG,"Connected Devices : ${connectedDevices} ")
+            //Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)}")
+            //Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)}")
 
-            super.onConnectionStateChange(device, status, newState)
         }
 
         override fun onCharacteristicReadRequest(device: BluetoothDevice?, requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic?) {
@@ -86,6 +95,7 @@ class BLEManager(
             val payload = if (offset > 0 && offset < value.size) value.copyOfRange(offset, value.size) else value
 
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, payload)
+
         }
 
         override fun onDescriptorWriteRequest(device: BluetoothDevice?, requestId: Int, descriptor: BluetoothGattDescriptor?, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?) {
@@ -103,8 +113,9 @@ class BLEManager(
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
     val notifyCompleteCharacteristic = BluetoothGattCharacteristic(notifyCompleteUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
-
-    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,notifyCompleteCharacteristic)
+    val disconnectCharacteristic = BluetoothGattCharacteristic(disconnectUUID,
+        BluetoothGattCharacteristic.PROPERTY_INDICATE, BluetoothGattCharacteristic.PERMISSION_READ)
+    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,notifyCompleteCharacteristic,disconnectCharacteristic)
 
     private val notificationService = BluetoothGattService(notificationServiceUUID,
         BluetoothGattService.SERVICE_TYPE_PRIMARY)
@@ -149,8 +160,9 @@ class BLEManager(
     init {
 
         Log.d(TAG,"Initializing...")
-        Log.d(TAG,bluetoothGattServer.services.toString())
+        //Log.d(TAG,bluetoothGattServer.services.toString())
         bluetoothGattServer.clearServices()
+        connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
         Log.d(TAG,"adding Services")
         characteristics.forEach {
             it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
@@ -170,20 +182,27 @@ class BLEManager(
     fun stop(){
         isAdvertising = false
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
-
-
+        connectedDevices.forEach { device->
+            disconnectDevice(device.address)
+        }
+        connectedDevices = listOf()
         bluetoothGattServer.clearServices()
         bluetoothGattServer.close()
     }
     fun disconnectDevice(address: String){
         var device: BluetoothDevice? = null
-            connectedDevices.forEach {
-                if(it.address == address)
-                    device = it
-            }
+        connectedDevices.forEach {
+            if(it.address == address)
+                device = it
+        }
         if(device == null) Log.d(TAG,"Cant disconnect $address not found (NULL)")
-        else
+        else {
+            disconnectCharacteristic.setValue("OK")
+            bluetoothGattServer.notifyCharacteristicChanged(device, disconnectCharacteristic,true)
             bluetoothGattServer.cancelConnection(device)
+            Log.d(TAG,"Notifying $device to disconnect")
+            Log.d(TAG,"Cancelling connection to $device")
+        }
     }
     fun sendNotification(nData: NotificationData): Boolean{
         val title = nData.title
@@ -201,9 +220,8 @@ class BLEManager(
     private fun notifyChar(){
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER).forEach { device->
             Log.d(TAG,"Notifying device: ${device?.name} ${device?.address}")
-            //characteristics.forEach { characteristic->
-                bluetoothGattServer.notifyCharacteristicChanged(device, notifyCompleteCharacteristic,false)
-            //}
+
+            bluetoothGattServer.notifyCharacteristicChanged(device, notifyCompleteCharacteristic,false)
         }
 
     }

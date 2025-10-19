@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import com.example.phonotify.service.CommunicationService
@@ -13,13 +14,17 @@ import kotlinx.coroutines.launch
 
 class ViewModel(application: Application): AndroidViewModel(application) {
 
-    var main_switch_checked = mutableStateOf(false)
+    //var main_switch_checked = mutableStateOf(false)
+
+    val main_switch_checked: LiveData<Boolean> = ViewModelData.serviceRunning
 
     fun startBLE(){
+        ViewModelData.serviceRunning.postValue(true)
         Log.d("notListener","Sent START for notification")
         send(CommunicationService.START)
     }
     fun stopBLE(){
+        ViewModelData.serviceRunning.postValue(false)
         Log.d("notListener","Sent STOP for notification")
         send(CommunicationService.STOP)
     }
