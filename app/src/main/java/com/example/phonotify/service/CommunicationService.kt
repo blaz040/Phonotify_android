@@ -1,10 +1,12 @@
 package com.example.phonotify.service
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.example.phonotify.MainActivity
 import com.example.phonotify.MyApplication
 import com.example.phonotify.R
 import com.example.phonotify.ViewModelData
@@ -36,17 +38,20 @@ class CommunicationService: Service() {
     }
     fun start(){
         Log.d(TAG,"starting....")
-        //val disconnectIntent = Intent(this, SensorDataManagerService::class.java).setAction(DEVICE_DISCONNECT)
-        //val disconnectPendingIntent: PendingIntent = PendingIntent.getService(this,0,disconnectIntent,PendingIntent.FLAG_IMMUTABLE)
+
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val ble_builder = NotificationCompat.Builder(this, MyApplication.ble_notification_channel)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("Sending notifications")
             .setContentText("...")
-            //.addAction(0,"Disconnect",disconnectPendingIntent)
+            .setContentIntent(pendingIntent)//.addAction(0,"Disconnect",disconnectPendingIntent)
             .build()
         startForeground(notificationID,ble_builder)
+
         ble_api.advertise()
+
         serviceScope.launch {
             ViewModelData.notyData.collect {
                 Log.d(TAG,"Got Notification Data : $it")
