@@ -19,6 +19,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import com.example.phonotify.ViewModelData
 import kotlinx.coroutines.delay
+import timber.log.Timber
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
@@ -57,7 +58,7 @@ class BLEManager(
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
             if(newState == BluetoothProfile.STATE_CONNECTED){
-                Log.d(TAG,"Connected Name: ${device} ${device?.name} Addr: ${device?.address}")
+                Timber.d("Connected Name: ${device} ${device?.name} Addr: ${device?.address}")
                 /*if(device != null) {
                     connectedDevices.add(device)
                     ViewModelData.addDevice(device)
@@ -66,7 +67,7 @@ class BLEManager(
                 connection = true
             }
             else if(newState == BluetoothProfile.STATE_DISCONNECTED){
-                Log.d(TAG,"Disconnected Name: ${device?.name} Addr: ${device?.address} ")
+                Timber.d("Disconnected Name: ${device?.name} Addr: ${device?.address} ")
                 /*
                 if(device != null) {
                     connectedDevices.remove(device)
@@ -79,9 +80,9 @@ class BLEManager(
                 advertise()
             }
             connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
-            Log.d(TAG,"Connected Devices : ${connectedDevices} ")
-            //Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)}")
-            //Log.d(TAG,"Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)}")
+            Timber.d("Connected Devices : ${connectedDevices} ")
+            //Timber.d("Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)}")
+            //Timber.d("Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)}")
 
         }
 
@@ -138,7 +139,7 @@ class BLEManager(
             super.onStartSuccess(settingsInEffect)
 
             isAdvertising = true
-            Log.d(TAG,"Advertising success")
+            Timber.d("Advertising success")
         }
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
@@ -152,18 +153,18 @@ class BLEManager(
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "Not supported"
                 else-> "${errorCode}"
             }
-            Log.d(TAG,"Advertising failure: $text")
+            Timber.d("Advertising failure: $text")
         }
 
     }
     // ----------------------------------------------------------------------------------
     init {
 
-        Log.d(TAG,"Initializing...")
-        //Log.d(TAG,bluetoothGattServer.services.toString())
+        Timber.d("Initializing...")
+        //Timber.d(bluetoothGattServer.services.toString())
         bluetoothGattServer.clearServices()
         connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
-        Log.d(TAG,"adding Services")
+        Timber.d("adding Services")
         characteristics.forEach {
             it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
             notificationService.addCharacteristic(it)
@@ -195,13 +196,13 @@ class BLEManager(
             if(it.address == address)
                 device = it
         }
-        if(device == null) Log.d(TAG,"Cant disconnect $address not found (NULL)")
+        if(device == null) Timber.d("Cant disconnect $address not found (NULL)")
         else {
             disconnectCharacteristic.setValue("OK")
             bluetoothGattServer.notifyCharacteristicChanged(device, disconnectCharacteristic,true)
             bluetoothGattServer.cancelConnection(device)
-            Log.d(TAG,"Notifying $device to disconnect")
-            Log.d(TAG,"Cancelling connection to $device")
+            Timber.d("Notifying $device to disconnect")
+            Timber.d("Cancelling connection to $device")
         }
     }
     fun sendNotification(nData: NotificationData): Boolean{
@@ -213,13 +214,13 @@ class BLEManager(
         succ =  succ && contextCharacteristic.setValue(text)
         succ =  succ && packageCharacteristic.setValue(pckg)
         succ =  succ && notifyCompleteCharacteristic.setValue("Ok")
-        Log.d(TAG,"Writing to characteristics $succ: $title $text $pckg")
+        Timber.d("Writing to characteristics $succ: $title $text $pckg")
         notifyChar()
         return succ
     }
     private fun notifyChar(){
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER).forEach { device->
-            Log.d(TAG,"Notifying device: ${device?.name} ${device?.address}")
+            Timber.d("Notifying device: ${device?.name} ${device?.address}")
 
             bluetoothGattServer.notifyCharacteristicChanged(device, notifyCompleteCharacteristic,false)
         }

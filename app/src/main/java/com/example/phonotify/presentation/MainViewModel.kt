@@ -1,18 +1,19 @@
-package com.example.phonotify
+package com.example.phonotify.presentation
 
 import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import com.example.ble_con.fileManager.FileManager
+import com.example.phonotify.ViewModelData
 import com.example.phonotify.service.CommunicationService
 import kotlinx.coroutines.launch
 
-class ViewModel(application: Application): AndroidViewModel(application) {
+class MainViewModel(application: Application): AndroidViewModel(application) {
 
     //var main_switch_checked = mutableStateOf(false)
 
@@ -21,17 +22,17 @@ class ViewModel(application: Application): AndroidViewModel(application) {
     fun startBLE(){
         ViewModelData.serviceRunning.postValue(true)
         Log.d("notListener","Sent START for notification")
-        send(CommunicationService.START)
+        send(CommunicationService.Companion.START)
     }
     fun stopBLE(){
         ViewModelData.serviceRunning.postValue(false)
         Log.d("notListener","Sent STOP for notification")
-        send(CommunicationService.STOP)
+        send(CommunicationService.Companion.STOP)
     }
     fun disconnectDevice(device: BluetoothDevice){
         val address = device.address
         Intent(application, CommunicationService::class.java).also{
-            it.action = CommunicationService.DISCONNECT_DEVICE
+            it.action = CommunicationService.Companion.DISCONNECT_DEVICE
             it.putExtra("device_address",address)
             application.startService(it)
         }
@@ -43,10 +44,10 @@ class ViewModel(application: Application): AndroidViewModel(application) {
         }
     }
     fun resendRecentNotification(){
-        send(CommunicationService.RESEND)
+        send(CommunicationService.Companion.RESEND)
     }
     init {
-        viewModelScope.launch{
+        viewModelScope.launch {
             ViewModelData.notyData.collect{
                 ViewModelData.setNotification(it)
             }

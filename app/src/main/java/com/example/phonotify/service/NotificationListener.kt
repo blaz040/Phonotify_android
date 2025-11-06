@@ -15,6 +15,7 @@ import android.util.Log
 import com.example.phonotify.ViewModelData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 
 class NotificationListener: NotificationListenerService() {
@@ -23,12 +24,12 @@ class NotificationListener: NotificationListenerService() {
     private var prevContext = "null"
     private var prevPackage = "null"
 
-
-    val notificationManager = getSystemService(NotificationManager::class.java)
-
     @Override
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
+
+        //val notificationManager = getSystemService(NotificationManager::class.java)
+
         if(sbn == null) return
         val extras: Bundle = sbn.notification.extras
 
@@ -36,7 +37,7 @@ class NotificationListener: NotificationListenerService() {
         var text = extras.getCharSequence("android.text")?.toString() ?: "No Text"
 
         val channelId = sbn.notification.channelId
-
+        /*
         val channel = notificationManager.getNotificationChannel(channelId)
         val importance = channel.importance
 
@@ -44,21 +45,26 @@ class NotificationListener: NotificationListenerService() {
             importance > NotificationManager.IMPORTANCE_DEFAULT-> true
             else -> false
         }
+
+         */
         if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
             val arr = getActiveMediaInfo(this)
             title = arr[0]
             text = arr[1]
         }
+        /*
         else{
             if(notify == false){
                 return
             }
         }
+
+         */
         val nData = NotificationData(title,text,sbn.packageName)
 
         if(prevTitle != title || prevContext != text || prevPackage != sbn.packageName) {
             GlobalScope.launch {
-                Log.d(TAG,"Emitting... \n current: ${title} ${text} ${sbn.packageName} \n previous: ${prevTitle} ${prevContext} ${prevPackage} ")
+                Timber.d("Emitting... \n current: ${title} ${text} ${sbn.packageName} \n previous: ${prevTitle} ${prevContext} ${prevPackage} ")
                 ViewModelData.notyData.emit(nData)
             }
         }
@@ -66,12 +72,12 @@ class NotificationListener: NotificationListenerService() {
         prevTitle = title
         prevContext = text
         prevPackage = sbn.packageName
-        Log.d(TAG,"Notification Posted... ${prevTitle} ${prevContext} ${prevPackage}")
+        Timber.d("Notification Posted... ${prevTitle} ${prevContext} ${prevPackage}")
     }
 
     @Override
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        Log.d(TAG,"Notification Removed...")
+        Timber.d("Notification Removed...")
         super.onNotificationRemoved(sbn)
     }
 
@@ -95,12 +101,12 @@ class NotificationListener: NotificationListenerService() {
 
                     val playing = playbackState?.state == PlaybackState.STATE_PLAYING
 
-                    Log.d(TAG, "[$pkg] $title — $artist | $album | Playing=$playing")
+                    Timber.d("[$pkg] $title — $artist | $album | Playing=$playing")
                 }
             }
         }
         catch (e: Exception){
-            Log.e(TAG," crashed ActiveMediaInfo $e")
+            Timber.e(" crashed ActiveMediaInfo $e")
         }
         return arrayOf(title,artist)
     }

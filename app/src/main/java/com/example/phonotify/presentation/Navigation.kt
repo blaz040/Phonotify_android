@@ -1,10 +1,9 @@
 package com.example.phonotify.presentation
 
-import android.R
-import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -18,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -28,9 +26,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ble_con.Snackbar.SnackbarManager
-import com.example.phonotify.ViewModel
+import com.example.phonotify.presentation.Screens.LogScreen
+import com.example.phonotify.presentation.Screens.MainScreen
+import com.example.phonotify.presentation.Screens.SecondScreen
 import com.example.phonotify.repository.Routes
-
+import timber.log.Timber
 
 
 enum class Destination(
@@ -40,19 +40,21 @@ enum class Destination(
     val label: String) {
 
     MainScreen(Routes.MainScreen, Icons.Default.Home,"Home Screen","Home"),
+    logScreen(Routes.LogScreen, Icons.Default.Info, "Log","Log"),
     SecondScreen(Routes.SecondScreen,Icons.Default.Settings,"Second Screen","Screen 2")
+
 }
 @Composable
 fun Navigation(
-    vm: ViewModel = viewModel()
+    vm: MainViewModel = viewModel()
 ) {
     val navController = rememberNavController()
 
-    //Snackbar
+    //======================== Snackbar ===================================
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(true) {
         SnackbarManager.events.collect{ event->
-            Log.d("SnackbarManager","Got message : ${event.message}")
+            Timber.d("Got message : ${event.message}")
             val result = snackbarHostState.showSnackbar(
                 message = event.message,
                 withDismissAction = true,
@@ -64,8 +66,7 @@ fun Navigation(
             }
         }
     }
-
-
+    //========================== Scaffold =================================
     var selectedDestination = rememberSaveable { mutableIntStateOf(Destination.MainScreen.ordinal) }
 
     Scaffold(
@@ -73,6 +74,7 @@ fun Navigation(
             SnackbarHost(hostState = snackbarHostState)
         },
         bottomBar = {
+
             NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
                 Destination.entries.forEachIndexed { index, destination ->
                     NavigationBarItem(
@@ -91,6 +93,7 @@ fun Navigation(
                     )
                 }
             }
+
         }
     ) { contentPadding ->
         NavHost(
@@ -103,6 +106,9 @@ fun Navigation(
             }
             composable(Routes.SecondScreen) {
                 SecondScreen(vm)
+            }
+            composable(Routes.LogScreen){
+                LogScreen()
             }
         }
     }

@@ -26,14 +26,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.phonotify.presentation.Navigation
 import com.example.phonotify.service.NotificationData
 import com.example.phonotify.ui.theme.NotificationSharringTheme
 
 class MainActivity : ComponentActivity() {
-    @SuppressLint("MissingPermission")
-    @SuppressWarnings("MissingPermissions")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         if (isNotificationListenerEnabled(this) == false) {
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
@@ -42,7 +43,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NotificationSharringTheme {
-                val vm = viewModel<ViewModel>()
+                Navigation()
+                /*
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column(modifier = Modifier.fillMaxSize().padding(innerPadding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                         Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
@@ -101,8 +103,12 @@ class MainActivity : ComponentActivity() {
 
                 }
             }
+
+                 */
+            }
         }
     }
+
     fun isNotificationListenerEnabled(context: Context): Boolean {
         val packageNames = NotificationManagerCompat.getEnabledListenerPackages(context)
         return packageNames.contains(context.packageName)

@@ -1,5 +1,6 @@
-package com.example.phonotify.presentation
+package com.example.phonotify.presentation.Screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Card
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,12 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.phonotify.ViewModel
+import com.example.phonotify.presentation.MainViewModel
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.service.NotificationData
 
+@SuppressLint("MissingPermission")
 @Composable
-fun MainScreen(vm: ViewModel){
+fun MainScreen(vm: MainViewModel){
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {

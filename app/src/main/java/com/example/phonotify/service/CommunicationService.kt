@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class CommunicationService: Service() {
 
@@ -27,7 +28,7 @@ class CommunicationService: Service() {
     private var latestNotification: NotificationData = NotificationData("NUll","Null","Null")
     @Override
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG,"got action")
+        Timber.d("got action")
         when(intent?.action){
             START -> start()
             STOP -> stop()
@@ -37,7 +38,7 @@ class CommunicationService: Service() {
         return super.onStartCommand(intent, flags, startId)
     }
     fun start(){
-        Log.d(TAG,"starting....")
+        Timber.d("starting....")
 
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
@@ -54,7 +55,7 @@ class CommunicationService: Service() {
 
         serviceScope.launch {
             ViewModelData.notyData.collect {
-                Log.d(TAG,"Got Notification Data : $it")
+                Timber.d("Got Notification Data : $it")
                 val ch = ble_api.sendNotification(it)
                 ViewModelData.setSentStatus(ch)
                 latestNotification = it

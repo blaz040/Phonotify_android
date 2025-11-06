@@ -36,9 +36,9 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig =true
     }
 }
-
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -62,8 +62,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:")
 
+    // Timber
+    implementation("com.jakewharton.timber:timber:5.0.1")
     //Navigation
     implementation("androidx.navigation:navigation-compose:2.9.3")
+    // JSON serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
 
 
 

@@ -20,6 +20,8 @@ object ViewModelData {
 
     val notyData = MutableSharedFlow<NotificationData>()
 
+    val newLogs = MutableSharedFlow<Boolean>()
+
     private val _liveNotData = MutableLiveData<NotificationData>()
     val liveNotData: LiveData<NotificationData> = _liveNotData
     
