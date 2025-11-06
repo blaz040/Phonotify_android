@@ -24,7 +24,7 @@ class LogsViewModel(application: Application): AndroidViewModel(application) {
         _logs.postValue(myFileManager.getLogs())
         viewModelScope.launch {
             ViewModelData.newLogs.collect{
-                Log.d("TIMBER","collected  $it")
+                //Log.d("TIMBER","collected  $it")
                 if(it == true){
                     _logs.postValue(myFileManager.getLogs())
                 }

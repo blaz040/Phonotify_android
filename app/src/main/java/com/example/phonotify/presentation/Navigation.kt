@@ -40,8 +40,8 @@ enum class Destination(
     val label: String) {
 
     MainScreen(Routes.MainScreen, Icons.Default.Home,"Home Screen","Home"),
-    logScreen(Routes.LogScreen, Icons.Default.Info, "Log","Log"),
-    SecondScreen(Routes.SecondScreen,Icons.Default.Settings,"Second Screen","Screen 2")
+    SecondScreen(Routes.SecondScreen,Icons.Default.Settings,"Second Screen","Screen 2"),
+    LogScreen(Routes.LogScreen, Icons.Default.Info, "Log","Log")
 
 }
 @Composable

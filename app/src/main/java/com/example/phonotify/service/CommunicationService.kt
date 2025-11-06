@@ -47,7 +47,8 @@ class CommunicationService: Service() {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("Sending notifications")
             .setContentText("...")
-            .setContentIntent(pendingIntent)//.addAction(0,"Disconnect",disconnectPendingIntent)
+            .setContentIntent(pendingIntent)
+            //.addAction(0,"Disconnect",disconnectPendingIntent)
             .build()
         startForeground(notificationID,ble_builder)
 
