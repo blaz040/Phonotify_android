@@ -1,6 +1,7 @@
 package com.example.phonotify.service
 
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -21,15 +22,10 @@ class NotificationListener: NotificationListenerService() {
     private var prevTitle = "null"
     private var prevContext = "null"
     private var prevPackage = "null"
-    @Override
-    override fun onBind(intent: Intent?): IBinder? {
-        return super.onBind(intent)
-    }
 
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(TAG,"Created NotificationListener")
-    }
+
+    val notificationManager = getSystemService(NotificationManager::class.java)
+
     @Override
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
@@ -39,19 +35,34 @@ class NotificationListener: NotificationListenerService() {
         var title = extras.getString("android.title") ?: "No Title"
         var text = extras.getCharSequence("android.text")?.toString() ?: "No Text"
 
+        val channelId = sbn.notification.channelId
+
+        val channel = notificationManager.getNotificationChannel(channelId)
+        val importance = channel.importance
+
+        val notify = when{
+            importance > NotificationManager.IMPORTANCE_DEFAULT-> true
+            else -> false
+        }
         if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
-           val arr = getActiveMediaInfo(this)
+            val arr = getActiveMediaInfo(this)
             title = arr[0]
             text = arr[1]
+        }
+        else{
+            if(notify == false){
+                return
+            }
         }
         val nData = NotificationData(title,text,sbn.packageName)
 
         if(prevTitle != title || prevContext != text || prevPackage != sbn.packageName) {
             GlobalScope.launch {
-               Log.d(TAG,"Emitting... \n current: ${title} ${text} ${sbn.packageName} \n previous: ${prevTitle} ${prevContext} ${prevPackage} ")
+                Log.d(TAG,"Emitting... \n current: ${title} ${text} ${sbn.packageName} \n previous: ${prevTitle} ${prevContext} ${prevPackage} ")
                 ViewModelData.notyData.emit(nData)
             }
         }
+
         prevTitle = title
         prevContext = text
         prevPackage = sbn.packageName
@@ -62,11 +73,6 @@ class NotificationListener: NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         Log.d(TAG,"Notification Removed...")
         super.onNotificationRemoved(sbn)
-    }
-
-    override fun onDestroy() {
-        Log.d(TAG,"Destroyed NotificationListener")
-        super.onDestroy()
     }
 
     @SuppressLint("MissingPermission")

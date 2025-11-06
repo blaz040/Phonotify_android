@@ -22,17 +22,7 @@ object ViewModelData {
 
     private val _liveNotData = MutableLiveData<NotificationData>()
     val liveNotData: LiveData<NotificationData> = _liveNotData
-
-    /*
-    fun addDevice(device: BluetoothDevice){
-        val newList = _connectedDevices.value.toMutableList().apply{ add(device) }
-        _connectedDevices.postValue(newList)
-    }
-    fun removeDevice(device: BluetoothDevice){
-        val newList = _connectedDevices.value.toMutableList().apply{ remove(device) }
-        _connectedDevices.postValue(newList)
-    }
-     */
+    
     fun setConnectedDevices(list: List<BluetoothDevice>){
         _connectedDevices.postValue(list.toList())
     }
