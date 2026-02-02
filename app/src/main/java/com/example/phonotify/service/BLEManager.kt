@@ -14,11 +14,17 @@ import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
-import android.os.Build
-import android.util.Log
-import androidx.annotation.RequiresApi
+import android.os.ParcelUuid
+import androidx.compose.material3.SnackbarDuration
+import com.example.ble_con.Snackbar.SnackbarManager
 import com.example.phonotify.ViewModelData
+import com.example.phonotify.service.notification.NotificationData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
 
@@ -38,28 +44,33 @@ class BLEManager(
         }
     private var connection = false
 
-    private var connectedDevices: List<BluetoothDevice> =  listOf()
-        set(value) {
-            ViewModelData.setConnectedDevices(value)
-            field = value
-        }
-    // -----------------------------------UUIDS-----------------------------------------------
-    private val notificationServiceUUID= UUID.fromString("91d76000-ac7b-4d70-ab3a-8b87a357239e")
+    private var connectedDevices: MutableMap<String,MyBluetoothDevice> =  mutableMapOf()
+    private val heartBeatTimeoutMillis = 15L *1000L  // 10 seconds
+
+    val monitoringScope = CoroutineScope(Dispatchers.Default + Job())
+
+// -----------------------------------UUIDS-----------------------------------------------
+    private val notificationServiceUUID = UUID.fromString("91d76000-ac7b-4d70-ab3a-8b87a357239e")
     private val titleCharacteristicUUID = UUID.fromString("91d76001-ac7b-4d70-ab3a-8b87a357239e")
     private val contextCharacteristicUUID = UUID.fromString("91d76002-ac7b-4d70-ab3a-8b87a357239e")
     private val packageCharacteristicUUID = UUID.fromString("91d76003-ac7b-4d70-ab3a-8b87a357239e")
     private val notifyCompleteUUID = UUID.fromString("91d76004-ac7b-4d70-ab3a-8b87a357239e")
     private val disconnectUUID = UUID.fromString("91d76005-ac7b-4d70-ab3a-8b87a357239e")
+    private val heartBeatUUID = UUID.fromString("91d76006-ac7b-4d70-ab3a-8b87a357239e")
 
     private val descriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
-    // --------------------------------------GATT CALLBACK--------------------------------------------
-    private val gattServerCallback = object: BluetoothGattServerCallback(){
+// --------------------------------------GATT CALLBACK--------------------------------------------
+    private val gattServerCallback = object: BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
             if(newState == BluetoothProfile.STATE_CONNECTED){
                 Timber.d("Connected Name: ${device} ${device?.name} Addr: ${device?.address}")
-                /*if(device != null) {
+                if(device != null){
+                    addDevice(MyBluetoothDevice(device, System.currentTimeMillis()))
+                }
+                /*
+                if(device != null) {
                     connectedDevices.add(device)
                     ViewModelData.addDevice(device)
                 }
@@ -73,13 +84,18 @@ class BLEManager(
                     connectedDevices.remove(device)
                     ViewModelData.removeDevice(device)
                 }
-
                  */
+                if(device != null){
+                    removeDevice(
+                        device = MyBluetoothDevice(device, System.currentTimeMillis()),
+                        disconnect = false,
+                    )
+                }
                 if(connectedDevices.size == 0)
                     connection = false
                 advertise()
             }
-            connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
+            //connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
             Timber.d("Connected Devices : ${connectedDevices} ")
             //Timber.d("Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)}")
             //Timber.d("Connected Devices : ${bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)}")
@@ -96,7 +112,6 @@ class BLEManager(
             val payload = if (offset > 0 && offset < value.size) value.copyOfRange(offset, value.size) else value
 
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, payload)
-
         }
 
         override fun onDescriptorWriteRequest(device: BluetoothDevice?, requestId: Int, descriptor: BluetoothGattDescriptor?, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?) {
@@ -104,8 +119,17 @@ class BLEManager(
                 descriptor.value = value
             bluetoothGattServer.sendResponse(device,requestId,BluetoothGatt.GATT_SUCCESS,offset,null)
         }
+
+        override fun onCharacteristicWriteRequest(device: BluetoothDevice?, requestId: Int, characteristic: BluetoothGattCharacteristic?, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?) {
+            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value)
+            if (characteristic == null || device == null) return
+            if (characteristic == heartBeatCharacteristic) {
+                connectedDevices[device.address]?.lastHeartBeat = System.currentTimeMillis()
+            }
+            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+        }
     }
-    // -------------------------------SERVICES-&-CHARACTERISTICS--------------------------------------------------
+/* -------------------------------SERVICES-&-CHARACTERISTICS--------------------------------------------------*/
     val titleCharacteristic = BluetoothGattCharacteristic(titleCharacteristicUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ)
     val contextCharacteristic = BluetoothGattCharacteristic(contextCharacteristicUUID,
@@ -116,34 +140,43 @@ class BLEManager(
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
     val disconnectCharacteristic = BluetoothGattCharacteristic(disconnectUUID,
         BluetoothGattCharacteristic.PROPERTY_INDICATE, BluetoothGattCharacteristic.PERMISSION_READ)
-    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,notifyCompleteCharacteristic,disconnectCharacteristic)
+
+    val heartBeatCharacteristic = BluetoothGattCharacteristic(heartBeatUUID,
+        BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_WRITE, BluetoothGattCharacteristic.PERMISSION_WRITE)
+
+    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,notifyCompleteCharacteristic,disconnectCharacteristic, heartBeatCharacteristic)
 
     private val notificationService = BluetoothGattService(notificationServiceUUID,
         BluetoothGattService.SERVICE_TYPE_PRIMARY)
 
     private var bluetoothGattServer: BluetoothGattServer = bluetoothManager.openGattServer(context, gattServerCallback)
 
-    // ------------------------------ADVERTISE----------------------------------------------------------------
+// ------------------------------ADVERTISE----------------------------------------------------------------
+    private var advertiseTries = 0
+    private val maxAdvertiseTries = 10
     private val advertisingSettings = AdvertiseSettings.Builder()
         .setConnectable(true)
         .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
         .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
         .build()
 
+    // MAXIMUM data size is 32 B
     private val advertiseData = AdvertiseData.Builder()
-        //.addServiceUuid(ParcelUuid(notificationServiceUUID))
-        .setIncludeDeviceName(true)
+        .addServiceUuid(ParcelUuid(notificationServiceUUID)) // UUID is 16 bytes + 2 overhead bytes
+        .setIncludeDeviceName(true) // 1 letter is 1 byte + 2 bytes of overhead // 32- 18 = 16 = 14 - 2(overhead) so max length of name is 14 letters
         .build()
     private val advertiseCallback = object: AdvertiseCallback(){
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             super.onStartSuccess(settingsInEffect)
-
             isAdvertising = true
+            advertiseTries = 0
+
+            SnackbarManager.send("Successfully Advertising")
             Timber.d("Advertising success")
         }
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-
+            if(isAdvertising == true) return
             isAdvertising = false
             val text: String = when(errorCode){
                 ADVERTISE_FAILED_DATA_TOO_LARGE -> "Data too Large"
@@ -153,70 +186,130 @@ class BLEManager(
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "Not supported"
                 else-> "${errorCode}"
             }
+            advertiseTries++
+            if(advertiseTries < maxAdvertiseTries)
+                advertise()
+
+            SnackbarManager.send("Failed to advertise trying, Reset: $advertiseTries of $maxAdvertiseTries",
+                SnackbarDuration.Short)
             Timber.d("Advertising failure: $text")
         }
 
     }
-    // ----------------------------------------------------------------------------------
+// ----------------------------------- Device & Monitor functions --------------------------------------------------------------
+    fun addDevice(device: MyBluetoothDevice) {
+        Timber.d("Added device ${device.device.address}")
+        connectedDevices.put(device.device.address,device)
+        updateViewModel()
+    }
+
+    fun removeDevice(device: MyBluetoothDevice, disconnect: Boolean = true) {
+        Timber.d("Removing device ${device.device.address}")
+        if(disconnect){
+            disconnectDevice(device.device.address)
+        }
+        connectedDevices.remove(device.device.address)
+
+        updateViewModel()
+    }
+
+    private fun updateViewModel() {
+        val devices = connectedDevices.values.map { it.device }.toList()
+        ViewModelData.setConnectedDevices(devices)
+    }
+
+    fun monitorClients() {
+        Timber.d("Monitoring")
+        val now = System.currentTimeMillis()
+        val disconnected = connectedDevices.filter { now - it.value.lastHeartBeat > heartBeatTimeoutMillis }
+        disconnected.forEach { device ->
+            Timber.d( "Client ${device.value.device.address} timed out, assumed disconnected")
+            removeDevice(device.value)
+        }
+    }
+    fun startMonitoring() {
+        Timber.d("Starting Monitoring")
+        monitoringScope.launch {
+            while (true) {
+                monitorClients()
+                delay(heartBeatTimeoutMillis)
+            }
+        }
+    }
+    // To stop
+    fun stopMonitoring() {
+        monitoringScope.cancel()
+    }
+// -------------------------------------------------------------------------------------------------------------------
     init {
 
         Timber.d("Initializing...")
         //Timber.d(bluetoothGattServer.services.toString())
         bluetoothGattServer.clearServices()
-        connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
+        //connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER)
         Timber.d("adding Services")
+        // add characteristics to service
         characteristics.forEach {
             it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
             notificationService.addCharacteristic(it)
         }
-
         bluetoothGattServer.addService(notificationService)
+        bluetoothAdapter.name = "phServer"
 
-        bluetoothAdapter.name = "Redmi"
         advertise()
+        startMonitoring()
     }
     fun advertise(){
-        isAdvertising = true
-
-        bluetoothLeAdvertiser.startAdvertising(advertisingSettings,advertiseData,advertiseCallback)
+        bluetoothLeAdvertiser.startAdvertising(advertisingSettings, advertiseData, advertiseCallback)
     }
     fun stop(){
-        isAdvertising = false
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+        isAdvertising = false
+
+        stopMonitoring()
+
         connectedDevices.forEach { device->
-            disconnectDevice(device.address)
+            removeDevice(device.value)
         }
-        connectedDevices = listOf()
+        //connectedDevices = listOf()
         bluetoothGattServer.clearServices()
         bluetoothGattServer.close()
     }
     fun disconnectDevice(address: String){
         var device: BluetoothDevice? = null
         connectedDevices.forEach {
-            if(it.address == address)
-                device = it
+            if(it.value.device.address == address)
+                device = it.value.device
         }
-        if(device == null) Timber.d("Cant disconnect $address not found (NULL)")
+       val systemConnectedDevices = bluetoothManager.getConnectedDevices(BluetoothGattServer.GATT)
+
+        val deviceToDisconnect = systemConnectedDevices.find { it.address == address }
+        if(deviceToDisconnect == null) {
+            Timber.d("System says $address is not connected. Link might be a 'Ghost'.")
+            // If it's a ghost, your only choice is to restart advertising or
+            // cycle the Bluetooth adapter.
+        }
         else {
-            disconnectCharacteristic.setValue("OK")
-            bluetoothGattServer.notifyCharacteristicChanged(device, disconnectCharacteristic,true)
-            bluetoothGattServer.cancelConnection(device)
+            // disconnectCharacteristic.setValue("OK")
+            // bluetoothGattServer.notifyCharacteristicChanged(device, disconnectCharacteristic,true)
+            bluetoothGattServer.cancelConnection(deviceToDisconnect)
             Timber.d("Notifying $device to disconnect")
             Timber.d("Cancelling connection to $device")
+            SnackbarManager.send("Disconnected from ${device?.name}:$address")
         }
     }
     fun sendNotification(nData: NotificationData): Boolean{
         val title = nData.title
         val text = nData.text
         val pckg = nData.pckg
-        var succ = true
-        succ =  succ && titleCharacteristic.setValue(title)
-        succ =  succ && contextCharacteristic.setValue(text)
-        succ =  succ && packageCharacteristic.setValue(pckg)
-        succ =  succ && notifyCompleteCharacteristic.setValue("Ok")
-        Timber.d("Writing to characteristics $succ: $title $text $pckg")
+        var success = true
+        success =  success && titleCharacteristic.setValue(title)
+        success =  success && contextCharacteristic.setValue(text)
+        success =  success && packageCharacteristic.setValue(pckg)
+        success =  success && notifyCompleteCharacteristic.setValue("Ok")
+        Timber.d("Writing to characteristics $success: $title $text $pckg")
         notifyChar()
-        return succ
+        return success
     }
     private fun notifyChar(){
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER).forEach { device->

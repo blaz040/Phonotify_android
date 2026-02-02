@@ -1,17 +1,14 @@
-package com.example.phonotify.service
+package com.example.phonotify.service.notification
 
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
+import android.media.MediaMetadata
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Bundle
-import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import com.example.phonotify.ViewModelData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -23,6 +20,7 @@ class NotificationListener: NotificationListenerService() {
     private var prevTitle = "null"
     private var prevContext = "null"
     private var prevPackage = "null"
+
     private val onGoingNotifications = mutableSetOf<String>()
 
     @Override
@@ -37,6 +35,7 @@ class NotificationListener: NotificationListenerService() {
         val importance = sbn.notification.priority
         val channelID = sbn.notification.channelId
 
+        /*
         if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
 
             val arr = getActiveMediaInfo(this)
@@ -46,8 +45,10 @@ class NotificationListener: NotificationListenerService() {
         else{
             if(importance < 0) return
         }
+        */
+        if (importance < 0) return
 
-
+        /*
         if(sbn.isOngoing) {
             val key = "|$channelID $title"
 
@@ -67,6 +68,7 @@ class NotificationListener: NotificationListenerService() {
                 Timber.d("Added $key")
             }
         }
+        */
         val nData = NotificationData(title, text, sbn.packageName)
 
         //if(prevTitle != title || prevContext != text || prevPackage != sbn.packageName) {
@@ -87,6 +89,7 @@ class NotificationListener: NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         super.onNotificationRemoved(sbn)
         if(sbn == null) return
+        /*
         if(sbn.isOngoing ){
             val extras: Bundle = sbn.notification.extras
             var title = extras.getString("android.title") ?: "No Title"
@@ -106,6 +109,7 @@ class NotificationListener: NotificationListenerService() {
             if(onGoingNotifications.contains(key))
                 onGoingNotifications.remove(key)
         }
+        */
     }
 
     @SuppressLint("MissingPermission")
@@ -113,7 +117,7 @@ class NotificationListener: NotificationListenerService() {
         var title = "None"
         var artist = "None"
         try {
-            val msm = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+            val msm = context.getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
             val controllers = msm.getActiveSessions(ComponentName(this, NotificationListener::class.java))
 
             for (controller in controllers) {
@@ -122,9 +126,9 @@ class NotificationListener: NotificationListenerService() {
                     val metadata = controller.metadata
                     val playbackState = controller.playbackState
 
-                    title = metadata?.getString(android.media.MediaMetadata.METADATA_KEY_TITLE) ?: "None"
-                    artist = metadata?.getString(android.media.MediaMetadata.METADATA_KEY_ARTIST) ?: "None"
-                    val album = metadata?.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM)
+                    title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "None"
+                    artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "None"
+                    val album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM)
 
                     val playing = playbackState?.state == PlaybackState.STATE_PLAYING
                 }

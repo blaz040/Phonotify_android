@@ -3,30 +3,29 @@ package com.example.phonotify.presentation
 import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
-import com.example.ble_con.fileManager.FileManager
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.service.CommunicationService
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class MainViewModel(application: Application): AndroidViewModel(application) {
 
-    //var main_switch_checked = mutableStateOf(false)
+    //var mainSwitchStatus = mutableStateOf(false)
 
-    val main_switch_checked: LiveData<Boolean> = ViewModelData.serviceRunning
+    val mainSwitchStatus: LiveData<Boolean> = ViewModelData.serviceRunning
 
     fun startBLE(){
-        ViewModelData.serviceRunning.postValue(true)
-        Log.d("notListener","Sent START for notification")
+        ViewModelData.serviceRunning.value = true
+        Timber.d("Sent START for notification")
         send(CommunicationService.Companion.START)
     }
     fun stopBLE(){
-        ViewModelData.serviceRunning.postValue(false)
-        Log.d("notListener","Sent STOP for notification")
+        ViewModelData.serviceRunning.value = false
+        Timber.d("Sent STOP for notification")
         send(CommunicationService.Companion.STOP)
     }
     fun disconnectDevice(device: BluetoothDevice){

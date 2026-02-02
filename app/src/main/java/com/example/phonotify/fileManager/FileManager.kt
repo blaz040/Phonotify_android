@@ -2,7 +2,6 @@ package com.example.ble_con.fileManager
 
 import android.content.Context
 import android.util.Log
-import com.example.phonotify.BuildConfig
 import com.example.phonotify.ViewModelData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +46,7 @@ class FileManager(
     }
 
     init{
-        Timber.d("init...")
+        // Timber.d("init...")
 
         if(!recordingsFolder.exists())
             Timber.d("creating folder${recordingsFolder} is ${recordingsFolder.mkdir()}")

@@ -4,12 +4,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.phonotify.MainActivity
 import com.example.phonotify.MyApplication
 import com.example.phonotify.R
 import com.example.phonotify.ViewModelData
+import com.example.phonotify.service.notification.NotificationData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,10 +22,9 @@ class CommunicationService: Service() {
 
     private val ble_api by lazy { BLEManager(applicationContext)}
     private val notificationID = 1
-
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var latestNotification: NotificationData = NotificationData("NUll", "Null", "Null")
 
-    private var latestNotification: NotificationData = NotificationData("NUll","Null","Null")
     @Override
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Timber.d("got action")
@@ -43,22 +42,22 @@ class CommunicationService: Service() {
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
-        val ble_builder = NotificationCompat.Builder(this, MyApplication.ble_notification_channel)
+        val bleNotification = NotificationCompat.Builder(this, MyApplication.ble_notification_channel)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Sending notifications")
+            .setContentTitle("Listening to notifications")
             .setContentText("...")
             .setContentIntent(pendingIntent)
             //.addAction(0,"Disconnect",disconnectPendingIntent)
             .build()
-        startForeground(notificationID,ble_builder)
+        startForeground(notificationID, bleNotification)
 
         ble_api.advertise()
 
         serviceScope.launch {
             ViewModelData.notyData.collect {
                 Timber.d("Got Notification Data : $it")
-                val ch = ble_api.sendNotification(it)
-                ViewModelData.setSentStatus(ch)
+                val status = ble_api.sendNotification(it)
+                ViewModelData.setSentStatus(status)
                 latestNotification = it
             }
         }
@@ -77,10 +76,8 @@ class CommunicationService: Service() {
             ViewModelData.notyData.emit(latestNotification)
         }
     }
-
-    @Override
-    override fun onBind(p0: Intent?): IBinder? {
-        TODO("Not yet implemented")
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
     }
     companion object{
         val START = "start"

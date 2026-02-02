@@ -20,16 +20,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.phonotify.presentation.MainViewModel
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.service.NotificationData
+import com.example.phonotify.service.notification.NotificationData
 
 @SuppressLint("MissingPermission")
 @Composable
 fun MainScreen(vm: MainViewModel){
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        // Turn on button
         Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            val checked = vm.main_switch_checked.observeAsState(false).value
-            Text("Turn ON: ")
+            val checked = vm.mainSwitchStatus.observeAsState(false).value
+            Text("Start advertising notifications: ")
             Switch(
                 checked = checked,
                 onCheckedChange = {
