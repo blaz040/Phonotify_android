@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // PROTO
+    alias(libs.plugins.protobuf)
 }
 
 android {
@@ -68,7 +70,26 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.3")
     // JSON serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+    // for images
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    //persistence
+    implementation(libs.datastore)
+    implementation(libs.protobuf.javalite)
 
 
+}
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.14.0"
+    }
 
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                maybeCreate("java").apply {
+                    option("lite")
+                }
+            }
+        }
+    }
 }

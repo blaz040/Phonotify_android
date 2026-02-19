@@ -1,4 +1,4 @@
-package com.example.phonotify.service
+package com.example.phonotify.services
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -18,7 +18,7 @@ import android.os.ParcelUuid
 import androidx.compose.material3.SnackbarDuration
 import com.example.ble_con.Snackbar.SnackbarManager
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.service.notification.NotificationData
+import com.example.phonotify.services.notification.Notification
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -224,7 +224,7 @@ class BLEManager(
         val disconnected = connectedDevices.filter { now - it.value.lastHeartBeat > heartBeatTimeoutMillis }
         disconnected.forEach { device ->
             Timber.d( "Client ${device.value.device.address} timed out, assumed disconnected")
-            removeDevice(device.value)
+            //removeDevice(device.value)
         }
     }
     fun startMonitoring() {
@@ -293,12 +293,12 @@ class BLEManager(
             // disconnectCharacteristic.setValue("OK")
             // bluetoothGattServer.notifyCharacteristicChanged(device, disconnectCharacteristic,true)
             bluetoothGattServer.cancelConnection(deviceToDisconnect)
-            Timber.d("Notifying $device to disconnect")
+            //Timber.d("Notifying $device to disconnect")
             Timber.d("Cancelling connection to $device")
             SnackbarManager.send("Disconnected from ${device?.name}:$address")
         }
     }
-    fun sendNotification(nData: NotificationData): Boolean{
+    fun sendNotification(nData: Notification): Boolean{
         val title = nData.title
         val text = nData.text
         val pckg = nData.pckg
@@ -312,11 +312,10 @@ class BLEManager(
         return success
     }
     private fun notifyChar(){
-        bluetoothManager.getConnectedDevices(BluetoothProfile.GATT_SERVER).forEach { device->
-            Timber.d("Notifying device: ${device?.name} ${device?.address}")
-
+        connectedDevices.forEach { myBLEDevice ->
+            val device = myBLEDevice.value.device
+            Timber.d("Notifying device: ${device.name} ${device.address}")
             bluetoothGattServer.notifyCharacteristicChanged(device, notifyCompleteCharacteristic,false)
         }
-
     }
 }

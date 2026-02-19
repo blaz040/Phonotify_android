@@ -29,8 +29,9 @@ import com.example.ble_con.Snackbar.SnackbarManager
 import com.example.phonotify.presentation.Screens.LogScreen
 import com.example.phonotify.presentation.Screens.MainScreen
 import com.example.phonotify.presentation.Screens.SecondScreen
-import com.example.phonotify.repository.Routes
-import timber.log.Timber
+import com.example.phonotify.presentation.ViewModels.MainViewModel
+import com.example.phonotify.presentation.ViewModels.SecondScreenViewModel
+import com.example.phonotify.presentation.Routes
 
 
 enum class Destination(
@@ -48,13 +49,14 @@ enum class Destination(
 fun Navigation(
     vm: MainViewModel = viewModel()
 ) {
+    val secondVM = viewModel<SecondScreenViewModel>()
     val navController = rememberNavController()
 
     //======================== Snackbar ===================================
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(true) {
         SnackbarManager.events.collect{ event->
-            Timber.d("Got message : ${event.message}")
+            //Timber.d("Got message : ${event.message}")
             val result = snackbarHostState.showSnackbar(
                 message = event.message,
                 withDismissAction = true,
@@ -105,7 +107,7 @@ fun Navigation(
                 MainScreen(vm)
             }
             composable(Routes.SecondScreen) {
-                SecondScreen(vm)
+                SecondScreen(secondVM)
             }
             composable(Routes.LogScreen){
                 LogScreen()

@@ -1,4 +1,4 @@
-package com.example.phonotify.service.notification
+package com.example.phonotify.services.notification
 
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -10,7 +10,9 @@ import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.example.phonotify.ViewModelData
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -21,7 +23,10 @@ class NotificationListener: NotificationListenerService() {
     private var prevContext = "null"
     private var prevPackage = "null"
 
-    private val onGoingNotifications = mutableSetOf<String>()
+    private val onGoingNotifications = NotificationData.onGoingNotifications
+    private val allowedPackages = NotificationData.allowedPackages
+    private val localScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
 
     @Override
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -30,10 +35,12 @@ class NotificationListener: NotificationListenerService() {
         if(sbn == null) return
 
         val extras: Bundle = sbn.notification.extras
-        var title = extras.getString("android.title") ?: "No Title"
-        var text = extras.getCharSequence("android.text")?.toString() ?: "No Text"
+        val title = extras.getString("android.title") ?: "No Title"
+        val text = extras.getCharSequence("android.text") ?.toString() ?: "No Text"
         val importance = sbn.notification.priority
         val channelID = sbn.notification.channelId
+        val notificationKey = sbn.key
+
 
         /*
         if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
@@ -48,6 +55,7 @@ class NotificationListener: NotificationListenerService() {
         */
         if (importance < 0) return
 
+        //if (NotificationData.notifications )
         /*
         if(sbn.isOngoing) {
             val key = "|$channelID $title"
@@ -69,26 +77,38 @@ class NotificationListener: NotificationListenerService() {
             }
         }
         */
-        val nData = NotificationData(title, text, sbn.packageName)
+        val nData = Notification(title, text, sbn.packageName)
+        if (sbn.packageName !in allowedPackages) return
+        if (onGoingNotifications[notificationKey] != null ) return // duplicate notification
+
+        onGoingNotifications[notificationKey] = nData
 
         //if(prevTitle != title || prevContext != text || prevPackage != sbn.packageName) {
-
         //}
-        GlobalScope.launch {
+        localScope.launch {
             ViewModelData.notyData.emit(nData)
         }
+        Timber.d("Notification Posted $notificationKey $channelID")
 
         prevTitle = title
         prevContext = text
         prevPackage = sbn.packageName
 
-        Timber.d("Notification Posted... ${prevTitle} ${prevContext} ${prevPackage} ${channelID}")
+        //Timber.d("Notification Posted... ${prevTitle} ${prevContext} ${prevPackage} ${channelID}")
     }
 
     @Override
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         super.onNotificationRemoved(sbn)
         if(sbn == null) return
+        val notificationKey = sbn.key
+
+        if (onGoingNotifications[notificationKey] != null) {
+            Timber.e("Removed notification that is not in MAP $notificationKey")
+            return
+        }
+        onGoingNotifications.remove(notificationKey)
+        Timber.d("Removed $notificationKey")
         /*
         if(sbn.isOngoing ){
             val extras: Bundle = sbn.notification.extras

@@ -3,7 +3,7 @@ package com.example.phonotify
 import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.phonotify.service.notification.NotificationData
+import com.example.phonotify.services.notification.Notification
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 object ViewModelData {
@@ -18,12 +18,12 @@ object ViewModelData {
     private val _connectedDevices = MutableLiveData<List<BluetoothDevice>>(listOf())
     val connectedDevices: LiveData<List<BluetoothDevice>> = _connectedDevices
 
-    val notyData = MutableSharedFlow<NotificationData>()
+    val notyData = MutableSharedFlow<Notification>()
 
     val newLogs = MutableSharedFlow<Boolean>()
 
-    private val _liveNotData = MutableLiveData<NotificationData>()
-    val liveNotData: LiveData<NotificationData> = _liveNotData
+    private val _liveNotData = MutableLiveData<Notification>()
+    val liveNotData: LiveData<Notification> = _liveNotData
     
     fun setConnectedDevices(list: List<BluetoothDevice>){
         _connectedDevices.postValue(list.toList())
@@ -31,7 +31,7 @@ object ViewModelData {
     fun setAdvertising(state: Boolean){
         _advertising.postValue(state)
     }
-    fun setNotification(nData: NotificationData){
+    fun setNotification(nData: Notification){
         _liveNotData.postValue(nData)
     }
     fun setSentStatus(state: Boolean){

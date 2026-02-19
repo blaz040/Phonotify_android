@@ -1,4 +1,4 @@
-package com.example.phonotify.service
+package com.example.phonotify.services
 
 import android.app.PendingIntent
 import android.app.Service
@@ -9,7 +9,8 @@ import com.example.phonotify.MainActivity
 import com.example.phonotify.MyApplication
 import com.example.phonotify.R
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.service.notification.NotificationData
+import com.example.phonotify.services.notification.Notification
+import com.example.phonotify.services.notification.NotificationData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,7 +24,7 @@ class CommunicationService: Service() {
     private val ble_api by lazy { BLEManager(applicationContext)}
     private val notificationID = 1
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var latestNotification: NotificationData = NotificationData("NUll", "Null", "Null")
+    private var latestNotification: Notification = Notification("NUll", "Null", "Null")
 
     @Override
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -38,6 +39,8 @@ class CommunicationService: Service() {
     }
     fun start(){
         Timber.d("starting....")
+
+        NotificationData.clearNotifications()
 
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)

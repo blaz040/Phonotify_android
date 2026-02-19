@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation
+package com.example.phonotify.presentation.ViewModels
 
 import android.app.Application
 import android.bluetooth.BluetoothDevice
@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.service.CommunicationService
+import com.example.phonotify.services.CommunicationService
 import kotlinx.coroutines.launch
 import timber.log.Timber
 

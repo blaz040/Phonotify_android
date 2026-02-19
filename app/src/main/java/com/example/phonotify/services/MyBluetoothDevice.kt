@@ -1,4 +1,4 @@
-package com.example.phonotify.service
+package com.example.phonotify.services
 
 import android.bluetooth.BluetoothDevice
 

@@ -18,9 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.phonotify.presentation.MainViewModel
+import com.example.phonotify.presentation.ViewModels.MainViewModel
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.service.notification.NotificationData
+import com.example.phonotify.services.notification.Notification
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -52,7 +52,7 @@ fun MainScreen(vm: MainViewModel){
                 }
             }
             Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp)){Box(Modifier.padding(10.dp)){
-                val nData = ViewModelData.liveNotData.observeAsState(NotificationData("Null","null","null")).value
+                val nData = ViewModelData.liveNotData.observeAsState(Notification("Null","null","null")).value
                 val sendStatus = ViewModelData.sendStatus.observeAsState(false).value
                 Column(Modifier.padding(10.dp)) {
                     Text("package: ${nData.pckg}\n")
@@ -69,7 +69,7 @@ fun MainScreen(vm: MainViewModel){
         Row(Modifier.padding(10.dp)){
             Text("Connected devices:")
             Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp).padding(0.dp,5.dp),){
-                Box(Modifier.padding(10.dp)){
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 5.dp)){
                     val connectedDevices = ViewModelData.connectedDevices.observeAsState(mutableListOf()).value
                     connectedDevices.forEach {
                         Row(verticalAlignment = Alignment.CenterVertically){
