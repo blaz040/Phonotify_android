@@ -101,8 +101,7 @@ fun Navigation(
         NavHost(
             navController = navController, startDestination = Routes.MainScreen,
             modifier = Modifier.padding(contentPadding)
-        )
-        {
+        ) {
             composable(Routes.MainScreen) {
                 MainScreen(vm)
             }
