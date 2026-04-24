@@ -2,9 +2,9 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ] # Runs every time you push to main
+    branches: [ "master" ] # Runs every time you push to main
   pull_request:
-    branches: [ "main" ] # Runs on every PR
+    branches: [ "master" ] # Runs on every PR
 
 jobs:
   build:
