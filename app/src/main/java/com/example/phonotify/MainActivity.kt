@@ -20,6 +20,7 @@ import com.example.phonotify.ui.theme.NotificationSharringTheme
 class MainActivity : ComponentActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
+
     private var interacted = true // used so that there arent multiple BLE_notification windows
 
     override fun onCreate(savedInstanceState: Bundle?) {
