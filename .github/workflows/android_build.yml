@@ -31,14 +31,14 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Sign APK
-        uses: r0adkill/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         id: sign_app
         with:
           releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.KEYSTORE }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }
 
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
