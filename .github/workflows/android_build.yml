@@ -42,7 +42,7 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           buildToolsVersion: 34.0.0  # <--- Add this line!
 
- 
+
 
       # NEW: Uploads the APK so you can download it from the Actions tab on regular commits
       - name: Upload APK Artifact
@@ -52,6 +52,7 @@ jobs:
           # Use the env variable created by the signing step
           path: ${{ env.ANDROID_SIGNED_FILE }}
           retention-days: 14
+
       # Existing: Creates a public release ONLY when you push a tag like v1.0.0
       - name: Create Release and Upload APK
         if: startsWith(github.ref, 'refs/tags/')
@@ -61,3 +62,6 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output
+        run: echo "${{ steps.sign_app.outputs.signedReleaseFile }}"
