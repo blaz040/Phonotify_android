@@ -41,7 +41,7 @@ class NotificationListener: NotificationListenerService() {
         val channelID = sbn.notification.channelId
         val notificationKey = sbn.key
 
-        if (importance < 0) return
+        if (importance < -1) return
 
         val nData = Notification(title, text, sbn.packageName)
         var ignore = false
