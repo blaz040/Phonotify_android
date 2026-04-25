@@ -44,21 +44,28 @@ class NotificationListener: NotificationListenerService() {
         if (importance < 0) return
 
         val nData = Notification(title, text, sbn.packageName)
-        if (sbn.packageName !in allowedPackages) return
-        if (onGoingNotifications[notificationKey] != null ) return // duplicate notification
+        var ignore = false
+        try {
+            if (sbn.packageName !in allowedPackages) ignore = true
+            if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
+        }
+        finally{
+            if (ignore)
+                if ( sbn.packageName in allowedPackages){
+                    Timber.w("Ignoring from${sbn.packageName}: txt: ${text}")
+                }
+        }
 
         onGoingNotifications[notificationKey] = nData
 
-        //if(prevTitle != title || prevContext != text || prevPackage != sbn.packageName) {
-        //}
         localScope.launch {
             ViewModelData.notyData.emit(nData)
         }
-        Timber.d("Notification Posted $notificationKey $channelID")
+        Timber.d("Notification Posted ${sbn.packageName} ${notificationKey}")
 
-        prevTitle = title
-        prevContext = text
-        prevPackage = sbn.packageName
+//        prevTitle = title
+//        prevContext = text
+//        prevPackage = sbn.packageName
 
         //Timber.d("Notification Posted... ${prevTitle} ${prevContext} ${prevPackage} ${channelID}")
     }
@@ -75,54 +82,33 @@ class NotificationListener: NotificationListenerService() {
         }
         onGoingNotifications.remove(notificationKey)
         Timber.d("Removed $notificationKey")
-        /*
-        if(sbn.isOngoing ){
-            val extras: Bundle = sbn.notification.extras
-            var title = extras.getString("android.title") ?: "No Title"
-            var text = extras.getCharSequence("android.text")?.toString() ?: "No Text"
-            val channelID = sbn.notification.channelId
-
-            if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
-                if(onGoingNotifications.contains(channelID)) Timber.e("This onGoing notification already contains $channelID")
-                onGoingNotifications.add(channelID)
-                val arr = getActiveMediaInfo(this)
-                title = arr[0]
-                text = arr[1]
-            }
-            val key = "$title $text $channelID"
-            Timber.d("Removed $key")
-
-            if(onGoingNotifications.contains(key))
-                onGoingNotifications.remove(key)
-        }
-        */
     }
 
-    @SuppressLint("MissingPermission")
-    fun getActiveMediaInfo(context: Context): Array<String> {
-        var title = "None"
-        var artist = "None"
-        try {
-            val msm = context.getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
-            val controllers = msm.getActiveSessions(ComponentName(this, NotificationListener::class.java))
-
-            for (controller in controllers) {
-                val pkg = controller.packageName
-                if (pkg == "com.spotify.music" || pkg == "com.google.android.apps.youtube.music") {
-                    val metadata = controller.metadata
-                    val playbackState = controller.playbackState
-
-                    title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "None"
-                    artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "None"
-                    val album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM)
-
-                    val playing = playbackState?.state == PlaybackState.STATE_PLAYING
-                }
-            }
-        }
-        catch (e: Exception){
-            Timber.e("crashed ActiveMediaInfo $e")
-        }
-        return arrayOf(title,artist)
-    }
+//    @SuppressLint("MissingPermission")
+//    fun getActiveMediaInfo(context: Context): Array<String> {
+//        var title = "None"
+//        var artist = "None"
+//        try {
+//            val msm = context.getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
+//            val controllers = msm.getActiveSessions(ComponentName(this, NotificationListener::class.java))
+//
+//            for (controller in controllers) {
+//                val pkg = controller.packageName
+//                if (pkg == "com.spotify.music" || pkg == "com.google.android.apps.youtube.music") {
+//                    val metadata = controller.metadata
+//                    val playbackState = controller.playbackState
+//
+//                    title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "None"
+//                    artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: "None"
+//                    val album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM)
+//
+//                    val playing = playbackState?.state == PlaybackState.STATE_PLAYING
+//                }
+//            }
+//        }
+//        catch (e: Exception){
+//            Timber.e("crashed ActiveMediaInfo $e")
+//        }
+//        return arrayOf(title,artist)
+//    }
 }
