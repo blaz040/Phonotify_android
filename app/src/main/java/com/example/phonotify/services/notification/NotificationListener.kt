@@ -41,42 +41,8 @@ class NotificationListener: NotificationListenerService() {
         val channelID = sbn.notification.channelId
         val notificationKey = sbn.key
 
-
-        /*
-        if(sbn.packageName == "com.spotify.music" || sbn.packageName == "com.google.youtube-music.com"){
-
-            val arr = getActiveMediaInfo(this)
-            title = arr[0]
-            text = arr[1]
-        }
-        else{
-            if(importance < 0) return
-        }
-        */
         if (importance < 0) return
 
-        //if (NotificationData.notifications )
-        /*
-        if(sbn.isOngoing) {
-            val key = "|$channelID $title"
-
-            if(onGoingNotifications.contains(key)){
-                Timber.d("Ignored $key")
-                return
-            }
-            else {
-                onGoingNotifications.removeIf { str->
-                    if( str.contains(Regex(channelID)) ){
-                        return@removeIf true
-                    }
-                    false
-                }
-                onGoingNotifications.add(key)
-                Timber.d("${onGoingNotifications.toString()}")
-                Timber.d("Added $key")
-            }
-        }
-        */
         val nData = Notification(title, text, sbn.packageName)
         if (sbn.packageName !in allowedPackages) return
         if (onGoingNotifications[notificationKey] != null ) return // duplicate notification
