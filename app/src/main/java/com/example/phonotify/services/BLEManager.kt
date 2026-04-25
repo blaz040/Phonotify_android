@@ -175,14 +175,19 @@ class BLEManager(
                 ADVERTISE_FAILED_ALREADY_STARTED -> { isAdvertising = true; "Advertise already started"}
                 ADVERTISE_FAILED_INTERNAL_ERROR -> "Internal Error"
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "Not supported"
-                else-> "${errorCode}"
+                else -> "${errorCode}"
             }
             advertiseTries++
             if(advertiseTries < maxAdvertiseTries)
                 advertise()
-
-            SnackbarManager.send("Failed to advertise trying, Reset: $advertiseTries of $maxAdvertiseTries",
-                SnackbarDuration.Short)
+            else{
+                SnackbarManager.send(
+                    "Failed to advertise",
+                    SnackbarDuration.Short
+                )
+            }
+            //SnackbarManager.send("Failed to advertise trying, Reset: $advertiseTries of $maxAdvertiseTries",
+            //   SnackbarDuration.Short)
             Timber.d("Advertising failure: $text")
         }
 
