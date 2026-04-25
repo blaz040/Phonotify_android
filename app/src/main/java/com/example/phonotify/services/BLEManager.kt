@@ -49,17 +49,6 @@ class BLEManager(
 
     val monitoringScope = CoroutineScope(Dispatchers.Default + Job())
 
-// -----------------------------------UUIDS-----------------------------------------------
-    private val notificationServiceUUID = UUID.fromString("91d76000-ac7b-4d70-ab3a-8b87a357239e")
-    private val titleCharacteristicUUID = UUID.fromString("91d76001-ac7b-4d70-ab3a-8b87a357239e")
-    private val contextCharacteristicUUID = UUID.fromString("91d76002-ac7b-4d70-ab3a-8b87a357239e")
-    private val packageCharacteristicUUID = UUID.fromString("91d76003-ac7b-4d70-ab3a-8b87a357239e")
-    private val notifyCompleteUUID = UUID.fromString("91d76004-ac7b-4d70-ab3a-8b87a357239e")
-    private val disconnectUUID = UUID.fromString("91d76005-ac7b-4d70-ab3a-8b87a357239e")
-    private val heartBeatUUID = UUID.fromString("91d76006-ac7b-4d70-ab3a-8b87a357239e")
-
-    private val descriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-
 // --------------------------------------GATT CALLBACK--------------------------------------------
     private val gattServerCallback = object: BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
@@ -130,23 +119,23 @@ class BLEManager(
         }
     }
 /* -------------------------------SERVICES-&-CHARACTERISTICS--------------------------------------------------*/
-    val titleCharacteristic = BluetoothGattCharacteristic(titleCharacteristicUUID,
+    val titleCharacteristic = BluetoothGattCharacteristic(UUIDS.titleCharacteristicUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ)
-    val contextCharacteristic = BluetoothGattCharacteristic(contextCharacteristicUUID,
+    val contextCharacteristic = BluetoothGattCharacteristic(UUIDS.contextCharacteristicUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
-    val packageCharacteristic = BluetoothGattCharacteristic(packageCharacteristicUUID,
+    val packageCharacteristic = BluetoothGattCharacteristic(UUIDS.packageCharacteristicUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
-    val notifyCompleteCharacteristic = BluetoothGattCharacteristic(notifyCompleteUUID,
+    val notifyCompleteCharacteristic = BluetoothGattCharacteristic(UUIDS.notifyCompleteUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY, BluetoothGattCharacteristic.PERMISSION_READ)
-    val disconnectCharacteristic = BluetoothGattCharacteristic(disconnectUUID,
+    val disconnectCharacteristic = BluetoothGattCharacteristic(UUIDS.disconnectUUID,
         BluetoothGattCharacteristic.PROPERTY_INDICATE, BluetoothGattCharacteristic.PERMISSION_READ)
 
-    val heartBeatCharacteristic = BluetoothGattCharacteristic(heartBeatUUID,
+    val heartBeatCharacteristic = BluetoothGattCharacteristic(UUIDS.heartBeatUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_WRITE, BluetoothGattCharacteristic.PERMISSION_WRITE)
 
     private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,notifyCompleteCharacteristic,disconnectCharacteristic, heartBeatCharacteristic)
 
-    private val notificationService = BluetoothGattService(notificationServiceUUID,
+    private val notificationService = BluetoothGattService(UUIDS.notificationServiceUUID,
         BluetoothGattService.SERVICE_TYPE_PRIMARY)
 
     private var bluetoothGattServer: BluetoothGattServer = bluetoothManager.openGattServer(context, gattServerCallback)
@@ -162,7 +151,7 @@ class BLEManager(
 
     // MAXIMUM data size is 32 B
     private val advertiseData = AdvertiseData.Builder()
-        .addServiceUuid(ParcelUuid(notificationServiceUUID)) // UUID is 16 bytes + 2 overhead bytes
+        .addServiceUuid(ParcelUuid(UUIDS.notificationServiceUUID)) // UUID is 16 bytes + 2 overhead bytes
         .setIncludeDeviceName(true) // 1 letter is 1 byte + 2 bytes of overhead // 32- 18 = 16 = 14 - 2(overhead) so max length of name is 14 letters
         .build()
     private val advertiseCallback = object: AdvertiseCallback(){
@@ -229,6 +218,7 @@ class BLEManager(
     }
     fun startMonitoring() {
         Timber.d("Starting Monitoring")
+
         monitoringScope.launch {
             while (true) {
                 monitorClients()
@@ -250,14 +240,14 @@ class BLEManager(
         Timber.d("adding Services")
         // add characteristics to service
         characteristics.forEach {
-            it?.addDescriptor(BluetoothGattDescriptor(descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
+            it?.addDescriptor(BluetoothGattDescriptor(UUIDS.descriptorUUID, BluetoothGattDescriptor.PERMISSION_WRITE))
             notificationService.addCharacteristic(it)
         }
         bluetoothGattServer.addService(notificationService)
         bluetoothAdapter.name = "phServer"
 
         advertise()
-        startMonitoring()
+        // startMonitoring()
     }
     fun advertise(){
         bluetoothLeAdvertiser.startAdvertising(advertisingSettings, advertiseData, advertiseCallback)
