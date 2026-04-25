@@ -3,13 +3,16 @@ name: Build Android APK
 on:
   push:
     branches: [ "master" ] # Runs every time you push to main
+    tags:
+      - 'v*' # Triggers only when you push a tag like v1.0.0
   pull_request:
     branches: [ "master" ] # Runs on every PR
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write # Crucial for creating releases
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,11 +27,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: my-app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          files: app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

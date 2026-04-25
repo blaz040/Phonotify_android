@@ -35,8 +35,10 @@ class BLEManager(
     private val TAG = "BLEManager"
     private val bluetoothManager by lazy {context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager }
     private val bluetoothAdapter by lazy { bluetoothManager.adapter}
-    //private val bluetoothLeScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
+    // private val bluetoothLeScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
     private val bluetoothLeAdvertiser by lazy { bluetoothAdapter.bluetoothLeAdvertiser}
+
+    private val monitor = Monitoring()
     private var isAdvertising = false
         set(value) {
             ViewModelData.setAdvertising(value);
@@ -45,9 +47,9 @@ class BLEManager(
     private var connection = false
 
     private var connectedDevices: MutableMap<String,MyBluetoothDevice> =  mutableMapOf()
-    private val heartBeatTimeoutMillis = 15L *1000L  // 10 seconds
 
-    val monitoringScope = CoroutineScope(Dispatchers.Default + Job())
+
+    private val heartBeatTimeoutMillis = 15L * 1000L  // 10 seconds
 
 // --------------------------------------GATT CALLBACK--------------------------------------------
     private val gattServerCallback = object: BluetoothGattServerCallback() {
@@ -56,7 +58,7 @@ class BLEManager(
             if(newState == BluetoothProfile.STATE_CONNECTED){
                 Timber.d("Connected Name: ${device} ${device?.name} Addr: ${device?.address}")
                 if(device != null){
-                    addDevice(MyBluetoothDevice(device, System.currentTimeMillis()))
+                    monitor.addDevice(MyBluetoothDevice(device, System.currentTimeMillis()))
                 }
                 /*
                 if(device != null) {
@@ -75,7 +77,7 @@ class BLEManager(
                 }
                  */
                 if(device != null){
-                    removeDevice(
+                    monitor.removeDevice(
                         device = MyBluetoothDevice(device, System.currentTimeMillis()),
                         disconnect = false,
                     )
@@ -186,53 +188,60 @@ class BLEManager(
 
     }
 // ----------------------------------- Device & Monitor functions --------------------------------------------------------------
+    inner class Monitoring {
+
+    val monitoringScope = CoroutineScope(Dispatchers.Default + Job())
+
     fun addDevice(device: MyBluetoothDevice) {
-        Timber.d("Added device ${device.device.address}")
-        connectedDevices.put(device.device.address,device)
-        updateViewModel()
-    }
-
-    fun removeDevice(device: MyBluetoothDevice, disconnect: Boolean = true) {
-        Timber.d("Removing device ${device.device.address}")
-        if(disconnect){
-            disconnectDevice(device.device.address)
+            Timber.d("Added device ${device.device.address}")
+            connectedDevices.put(device.device.address, device)
+            updateViewModel()
         }
-        connectedDevices.remove(device.device.address)
 
-        updateViewModel()
-    }
+        fun removeDevice(device: MyBluetoothDevice, disconnect: Boolean = true) {
+            Timber.d("Removing device ${device.device.address}")
+            if (disconnect) {
+                disconnectDevice(device.device.address)
+            }
+            connectedDevices.remove(device.device.address)
 
-    private fun updateViewModel() {
-        val devices = connectedDevices.values.map { it.device }.toList()
-        ViewModelData.setConnectedDevices(devices)
-    }
-
-    fun monitorClients() {
-        Timber.d("Monitoring")
-        val now = System.currentTimeMillis()
-        val disconnected = connectedDevices.filter { now - it.value.lastHeartBeat > heartBeatTimeoutMillis }
-        disconnected.forEach { device ->
-            Timber.d( "Client ${device.value.device.address} timed out, assumed disconnected")
-            //removeDevice(device.value)
+            updateViewModel()
         }
-    }
-    fun startMonitoring() {
-        Timber.d("Starting Monitoring")
 
-        monitoringScope.launch {
-            while (true) {
-                monitorClients()
-                delay(heartBeatTimeoutMillis)
+        private fun updateViewModel() {
+            val devices = connectedDevices.values.map { it.device }.toList()
+            ViewModelData.setConnectedDevices(devices)
+        }
+
+        fun monitorClients() {
+            Timber.d("Monitoring")
+            val now = System.currentTimeMillis()
+            val disconnected =
+                connectedDevices.filter { now - it.value.lastHeartBeat > heartBeatTimeoutMillis }
+            disconnected.forEach { device ->
+                Timber.d("Client ${device.value.device.address} timed out, assumed disconnected")
+                //removeDevice(device.value)
             }
         }
-    }
-    // To stop
-    fun stopMonitoring() {
-        monitoringScope.cancel()
+
+        fun startMonitoring() {
+            Timber.d("Starting Monitoring")
+
+            monitoringScope.launch {
+                while (true) {
+                    monitorClients()
+                    delay(heartBeatTimeoutMillis)
+                }
+            }
+        }
+
+        // To stop
+        fun stopMonitoring() {
+            monitoringScope.cancel()
+        }
     }
 // -------------------------------------------------------------------------------------------------------------------
     init {
-
         Timber.d("Initializing...")
         //Timber.d(bluetoothGattServer.services.toString())
         bluetoothGattServer.clearServices()
@@ -247,7 +256,7 @@ class BLEManager(
         bluetoothAdapter.name = "phServer"
 
         advertise()
-        // startMonitoring()
+        // monitor.startMonitoring()
     }
     fun advertise(){
         bluetoothLeAdvertiser.startAdvertising(advertisingSettings, advertiseData, advertiseCallback)
@@ -256,10 +265,10 @@ class BLEManager(
         bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
         isAdvertising = false
 
-        stopMonitoring()
+        monitor.stopMonitoring()
 
         connectedDevices.forEach { device->
-            removeDevice(device.value)
+            monitor.removeDevice(device.value)
         }
         //connectedDevices = listOf()
         bluetoothGattServer.clearServices()
