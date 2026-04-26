@@ -45,15 +45,16 @@ class NotificationListener: NotificationListenerService() {
 
         val nData = Notification(title, text, sbn.packageName)
         var ignore = false
-        try {
-            if (sbn.packageName !in allowedPackages) ignore = true
-            if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
-        }
-        finally{
-            if (ignore)
-                if ( sbn.packageName in allowedPackages){
-                    Timber.w("Ignoring from${sbn.packageName}: txt: ${text}")
-                }
+
+        if (sbn.packageName !in allowedPackages) ignore = true
+        if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
+
+        if (ignore)
+        {
+            if ( sbn.packageName in allowedPackages){
+                Timber.w("Ignoring from${sbn.packageName}: txt: ${text}")
+            }
+            return
         }
 
         onGoingNotifications[notificationKey] = nData
