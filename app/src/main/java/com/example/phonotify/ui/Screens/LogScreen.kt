@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation.Screens
+package com.example.phonotify.ui.Screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -21,8 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.phonotify.presentation.ViewModels.LogsViewModel
-import com.example.phonotify.presentation.MyHorizontalDivider
+import com.example.phonotify.ui.ViewModels.LogsViewModel
+import com.example.phonotify.ui.MyHorizontalDivider
 
 @Composable
 fun LogScreen(vm: LogsViewModel = viewModel()){

@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation
+package com.example.phonotify.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -26,12 +26,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ble_con.Snackbar.SnackbarManager
-import com.example.phonotify.presentation.Screens.LogScreen
-import com.example.phonotify.presentation.Screens.MainScreen
-import com.example.phonotify.presentation.Screens.SecondScreen
-import com.example.phonotify.presentation.ViewModels.MainViewModel
-import com.example.phonotify.presentation.ViewModels.SecondScreenViewModel
-import com.example.phonotify.presentation.Routes
+import com.example.phonotify.ui.Screens.LogScreen
+import com.example.phonotify.ui.Screens.MainScreen
+import com.example.phonotify.ui.Screens.SecondScreen
+import com.example.phonotify.ui.ViewModels.MainViewModel
+import com.example.phonotify.ui.ViewModels.SecondScreenViewModel
 
 
 enum class Destination(

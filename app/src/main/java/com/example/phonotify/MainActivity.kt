@@ -8,13 +8,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationManagerCompat
-import com.example.phonotify.presentation.Navigation
+import com.example.phonotify.ui.Navigation
 import com.example.phonotify.ui.theme.NotificationSharringTheme
 
 class MainActivity : ComponentActivity() {

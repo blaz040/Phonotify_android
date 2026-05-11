@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation.Screens
+package com.example.phonotify.ui.Screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.phonotify.presentation.ViewModels.MainViewModel
+import com.example.phonotify.ui.ViewModels.MainViewModel
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.services.notification.Notification
 

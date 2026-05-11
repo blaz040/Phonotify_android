@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation
+package com.example.phonotify.ui
 
 object Routes {
     const val MainScreen = "MainScreen"

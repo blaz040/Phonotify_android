@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation.ViewModels
+package com.example.phonotify.ui.ViewModels
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

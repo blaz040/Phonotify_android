@@ -1,4 +1,4 @@
-package com.example.phonotify.presentation.Screens
+package com.example.phonotify.ui.Screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,9 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.phonotify.datastore.ApplicationData
 import com.example.phonotify.datastore.ApplicationUi
-import com.example.phonotify.presentation.ViewModels.SecondScreenViewModel
+import com.example.phonotify.ui.ViewModels.SecondScreenViewModel
 
 @Composable
 fun SecondScreen(vm: SecondScreenViewModel){
