@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.material3.AlertDialog
 import androidx.core.content.FileProvider
 import com.example.phonotify.Constants
@@ -58,19 +60,26 @@ class AppUpdater(private val context: Context) {
             .header("Accept", "application/vnd.github.v3+json")
             .build()
 
+
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
+            if (!response.isSuccessful) {
+                Timber.e("API call failed: ${response.code} ${response.message}")
+                return null
+            }
             return gson.fromJson(response.body?.string(), GithubRelease::class.java)
+
         }
     }
 
     private fun showUpdateDialog(newVersion: String, downloadUrl: String) {
-        AlertDialog.Builder(context)
-            .setTitle("Update available")
-            .setMessage("Version $newVersion is available. Update now?")
-            .setPositiveButton("Update") { _, _ -> downloadAndInstall(downloadUrl) }
-            .setNegativeButton("Later", null)
-            .show()
+        Handler(Looper.getMainLooper()).post {  // Add this
+            AlertDialog.Builder(context)
+                .setTitle("Update available")
+                .setMessage("Version $newVersion is available. Update now?")
+                .setPositiveButton("Update") { _, _ -> downloadAndInstall(downloadUrl) }
+                .setNegativeButton("Later", null)
+                .show()
+        }
     }
 
     private fun downloadAndInstall(downloadUrl: String) {
