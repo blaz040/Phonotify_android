@@ -1,7 +1,6 @@
 package com.example.phonotify
 
 import android.content.Context
-import android.util.Log
 import com.example.ble_con.fileManager.FileManager
 import timber.log.Timber
 
