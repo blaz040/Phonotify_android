@@ -134,7 +134,7 @@ class BLEManager(
     val authenticationCharacteristic = BluetoothGattCharacteristic(UUIDS.authenticationCharactersticUUID,
         BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_WRITE, BluetoothGattCharacteristic.PERMISSION_WRITE)
 
-    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,newNotificationCharacteristic,disconnectCharacteristic, heartBeatCharacteristic)
+    private val characteristics = listOf(titleCharacteristic,contextCharacteristic,packageCharacteristic,newNotificationCharacteristic,disconnectCharacteristic, heartBeatCharacteristic, authenticationCharacteristic)
 
     private val notificationService = BluetoothGattService(UUIDS.notificationServiceUUID,
         BluetoothGattService.SERVICE_TYPE_PRIMARY)
