@@ -49,10 +49,10 @@ class NotificationListener: NotificationListenerService() {
         if (sbn.packageName !in allowedPackages) ignore = true
         if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
 
-        if (ignore)
-        {
+        if (ignore) {
             if ( sbn.packageName in allowedPackages){
                 Timber.w("Ignoring from${sbn.packageName}: txt: ${text}")
+                Timber.w(" UUID: ${sbn.uid})")
             }
             return
         }

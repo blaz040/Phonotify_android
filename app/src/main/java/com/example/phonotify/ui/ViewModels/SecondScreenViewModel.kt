@@ -29,7 +29,7 @@ class SecondScreenViewModel(application: Application): AndroidViewModel(applicat
     val installedApplications: LiveData<List<ApplicationUi>> = _installedApplications
 
     val enabledApplications: LiveData<List<ApplicationUi>> = installedApplications.map { list ->
-        list.filter { it.allowNotifications } // Assuming 'allowNotifications' is your boolean
+        list.filter { it.allowNotifications }
     }
 
     val disabledApplications: LiveData<List<ApplicationUi>> = installedApplications.map { list ->
