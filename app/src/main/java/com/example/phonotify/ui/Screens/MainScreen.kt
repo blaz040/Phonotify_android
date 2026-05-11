@@ -88,7 +88,7 @@ fun MainScreen(vm: MainViewModel){
             Text("Info: ")
             Text("Version TAG: ${BuildConfig.VERSION_NAME}")
             Text("Version CODE: ${BuildConfig.VERSION_CODE}")
-//            Text("Works!!!!!!!!!!!")
+            Text("Works!!!!!!!!!!!")
 //            Button({ vm.checkAndUpdate() }){
 //                Text("Check & Update")
 //
