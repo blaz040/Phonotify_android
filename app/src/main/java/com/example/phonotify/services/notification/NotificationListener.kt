@@ -47,7 +47,7 @@ class NotificationListener: NotificationListenerService() {
         var ignore = false
 
         if (sbn.packageName !in allowedPackages) ignore = true
-        if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
+//        if (onGoingNotifications[notificationKey] != null) ignore = true // duplicate notification
 
         if (ignore) {
             if ( sbn.packageName in allowedPackages){
@@ -82,7 +82,7 @@ class NotificationListener: NotificationListenerService() {
             return
         }
         onGoingNotifications.remove(notificationKey)
-        Timber.d("Removed $notificationKey")
+//        Timber.d("Removed $notificationKey")
     }
 
 //    @SuppressLint("MissingPermission")
