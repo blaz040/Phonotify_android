@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -18,9 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.phonotify.BuildConfig
 import com.example.phonotify.ui.ViewModels.MainViewModel
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.services.notification.Notification
+import com.example.phonotify.services.updater.AppUpdater
+import com.example.phonotify.ui.UpdateScreen
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -51,7 +55,7 @@ fun MainScreen(vm: MainViewModel){
                     Text("Resend Recent Notification")
                 }
             }
-            Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp)){Box(Modifier.padding(10.dp)){
+            Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp).padding(10.dp)){
                 val nData = ViewModelData.liveNotData.observeAsState(Notification("Null","null","null")).value
                 val sendStatus = ViewModelData.sendStatus.observeAsState(false).value
                 Column(Modifier.padding(10.dp)) {
@@ -64,9 +68,9 @@ fun MainScreen(vm: MainViewModel){
                         false-> Text("Sent: Failed")
                     }
                 }
-            }}
+            }
         }
-        Row(Modifier.padding(10.dp)){
+        Column(Modifier.padding(10.dp)){
             Text("Connected devices:")
             Card(modifier = Modifier.sizeIn(300.dp,100.dp,500.dp,200.dp).padding(0.dp,5.dp),){
                 Column(Modifier.padding(horizontal = 10.dp, vertical = 5.dp)){
@@ -80,6 +84,17 @@ fun MainScreen(vm: MainViewModel){
                 }
             }
         }
+        Column(Modifier.padding(10.dp)){
+            Text("Info: ")
+            Text("Version TAG: ${BuildConfig.VERSION_NAME}")
+            Text("Version CODE: ${BuildConfig.VERSION_CODE}")
+//            Text("Works!!!!!!!!!!!")
+//            Button({ vm.checkAndUpdate() }){
+//                Text("Check & Update")
+//
+//            }
+        }
+        UpdateScreen()
     }
 
 }

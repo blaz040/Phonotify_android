@@ -7,14 +7,18 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import com.example.phonotify.BuildConfig
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.services.bluetooth.CommunicationService
+import com.example.phonotify.services.updater.AppUpdater
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class MainViewModel(application: Application): AndroidViewModel(application) {
 
     //var mainSwitchStatus = mutableStateOf(false)
+
+    private val updater = AppUpdater(application)
 
     val mainSwitchStatus: LiveData<Boolean> = ViewModelData.serviceRunning
 
@@ -36,6 +40,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             application.startService(it)
         }
     }
+
+    fun checkAndUpdate(){
+        val currentVersion = BuildConfig.VERSION_NAME
+        updater.checkAndUpdate(currentVersion)
+    }
+
     private fun send(action: String){
         Intent(application, CommunicationService::class.java).also{
             it.action = action

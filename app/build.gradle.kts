@@ -5,18 +5,24 @@ plugins {
     // PROTO
     alias(libs.plugins.protobuf)
 }
+val appVersionCode: Int = project.findProperty("VERSION_CODE")?.toString()?.toInt() ?: 1
+val appVersionName: String = project.findProperty("VERSION_NAME")?.toString() ?: "0.0.1-dev"
 
 android {
     namespace = "com.example.phonotify"
     compileSdk = 36
 
     defaultConfig {
+
         applicationId = "com.example.phonotify"
         minSdk = 30
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
 
+//        versionCode = 1
+//        versionName = "1.0"
+
+        versionName = appVersionName
+        versionCode = appVersionCode
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -76,6 +82,8 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.protobuf.javalite)
 
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
 }
 protobuf {
