@@ -18,8 +18,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     //var mainSwitchStatus = mutableStateOf(false)
 
-    private val updater = AppUpdater(application)
-
     val mainSwitchStatus: LiveData<Boolean> = ViewModelData.serviceRunning
 
     fun startBLE(){
@@ -32,20 +30,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         Timber.d("Sent STOP for notification")
         send(CommunicationService.Companion.STOP)
     }
-    fun disconnectDevice(device: BluetoothDevice){
+    fun disconnectDevice(device: BluetoothDevice) {
         val address = device.address
-        Intent(application, CommunicationService::class.java).also{
+        Intent(application, CommunicationService::class.java).also {
             it.action = CommunicationService.Companion.DISCONNECT_DEVICE
-            it.putExtra("device_address",address)
+            it.putExtra("device_address", address)
             application.startService(it)
         }
     }
-
-    fun checkAndUpdate(){
-        val currentVersion = BuildConfig.VERSION_NAME
-        updater.checkAndUpdate(currentVersion)
-    }
-
     private fun send(action: String){
         Intent(application, CommunicationService::class.java).also{
             it.action = action
