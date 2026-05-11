@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import com.example.phonotify.ViewModelData
-import com.example.phonotify.services.CommunicationService
+import com.example.phonotify.services.bluetooth.CommunicationService
 import kotlinx.coroutines.launch
 import timber.log.Timber
 

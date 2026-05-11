@@ -1,4 +1,4 @@
-package com.example.phonotify.services
+package com.example.phonotify.services.bluetooth
 
 import java.util.UUID
 

@@ -49,7 +49,8 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-        <service android:name=".services.CommunicationService" android:foregroundServiceType="connectedDevice"/>
+
+        <service android:name=".services.bluetooth.CommunicationService" android:foregroundServiceType="connectedDevice"/>
     </application>
 
 </manifest>

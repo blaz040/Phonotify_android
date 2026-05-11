@@ -1,4 +1,4 @@
-package com.example.phonotify.services
+package com.example.phonotify.services.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -26,7 +26,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
 
 @SuppressLint("MissingPermission")
 class BLEManager(
