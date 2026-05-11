@@ -54,7 +54,6 @@ class AppUpdater(private val context: Context) {
             }
         }
     }
-
     suspend fun downloadApk(downloadUrl: String): File? {
         return withContext(Dispatchers.IO) {
             try {
@@ -71,6 +70,14 @@ class AppUpdater(private val context: Context) {
                         }
                     }
                 }
+
+                // Verify file actually exists and has content
+                if (!apkFile.exists() || apkFile.length() == 0L) {
+                    Timber.e("APK file missing or empty after download")
+                    return@withContext null
+                }
+
+                Timber.e("APK downloaded to: ${apkFile.absolutePath}, size: ${apkFile.length()}")
                 apkFile
             } catch (e: Exception) {
                 Timber.e("Download failed: ${e.message}")
