@@ -24,6 +24,7 @@ import com.example.phonotify.ui.ViewModels.MainViewModel
 import com.example.phonotify.ViewModelData
 import com.example.phonotify.services.notification.Notification
 import com.example.phonotify.services.updater.AppUpdater
+import com.example.phonotify.ui.UpdateScreen
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -87,12 +88,13 @@ fun MainScreen(vm: MainViewModel){
             Text("Info: ")
             Text("Version TAG: ${BuildConfig.VERSION_NAME}")
             Text("Version CODE: ${BuildConfig.VERSION_CODE}")
-            Text("Works!!!!!!!!!!!")
-            Button({ vm.checkAndUpdate() }){
-                Text("Check & Update")
-
-            }
+//            Text("Works!!!!!!!!!!!")
+//            Button({ vm.checkAndUpdate() }){
+//                Text("Check & Update")
+//
+//            }
         }
+        UpdateScreen()
     }
 
 }

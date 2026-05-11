@@ -33,57 +33,30 @@ class AppUpdater(private val context: Context) {
         @SerializedName("browser_download_url") val downloadUrl: String
     )
 
-    fun checkAndUpdate(currentVersion: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+    suspend fun fetchLatestRelease(): GithubRelease? {
+        return withContext(Dispatchers.IO) {
             try {
-                val release = fetchLatestRelease() ?: return@launch
-                val latestVersion = release.tagName.trimStart('v')
-                val current = currentVersion.trimStart('v')
+                val request = Request.Builder()
+                    .url("https://api.github.com/repos/blaz040/Phonotify_android/releases/latest")
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .build()
 
-                if (latestVersion == current) return@launch  // already up to date
-
-                val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
-                    ?: return@launch
-
-                withContext(Dispatchers.Main) {
-                    showUpdateDialog(latestVersion, apkAsset.downloadUrl)
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        Timber.e("API failed: ${response.code}")
+                        return@withContext null
+                    }
+                    gson.fromJson(response.body?.string(), GithubRelease::class.java)
                 }
             } catch (e: Exception) {
-                Timber.e("Update check failed, ${e}")
+                Timber.e("Fetch failed: ${e.message}")
+                null
             }
         }
     }
 
-    private fun fetchLatestRelease(): GithubRelease? {
-        val request = Request.Builder()
-            .url(Constants.apkUrl)
-            .header("Accept", "application/vnd.github.v3+json")
-            .build()
-
-
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                Timber.e("API call failed: ${response.code} ${response.message}")
-                return null
-            }
-            return gson.fromJson(response.body?.string(), GithubRelease::class.java)
-
-        }
-    }
-
-    private fun showUpdateDialog(newVersion: String, downloadUrl: String) {
-        Handler(Looper.getMainLooper()).post {  // Add this
-            AlertDialog.Builder(context)
-                .setTitle("Update available")
-                .setMessage("Version $newVersion is available. Update now?")
-                .setPositiveButton("Update") { _, _ -> downloadAndInstall(downloadUrl) }
-                .setNegativeButton("Later", null)
-                .show()
-        }
-    }
-
-    private fun downloadAndInstall(downloadUrl: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+    suspend fun downloadApk(downloadUrl: String): File? {
+        return withContext(Dispatchers.IO) {
             try {
                 val apkFile = File(
                     context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
@@ -98,17 +71,15 @@ class AppUpdater(private val context: Context) {
                         }
                     }
                 }
-
-                withContext(Dispatchers.Main) {
-                    installApk(apkFile)
-                }
+                apkFile
             } catch (e: Exception) {
-                Timber.e("Download failed ${e}")
+                Timber.e("Download failed: ${e.message}")
+                null
             }
         }
     }
 
-    private fun installApk(apkFile: File) {
+    fun installApk(apkFile: File) {
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
