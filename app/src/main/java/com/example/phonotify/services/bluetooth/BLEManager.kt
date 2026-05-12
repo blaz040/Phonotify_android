@@ -82,40 +82,39 @@ class BLEManager(
             bluetoothGattServer.sendResponse(device,requestId,BluetoothGatt.GATT_SUCCESS,offset,null)
         }
 
-        override fun onCharacteristicWriteRequest(device: BluetoothDevice?, requestId: Int, characteristic: BluetoothGattCharacteristic?, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray) {
-            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value)
-            if (characteristic == null || device == null) return
-            when (characteristic){
-                heartBeatCharacteristic -> authenticatedDevices[device.address]?.lastHeartBeat = System.currentTimeMillis()
-                authenticationCharacteristic -> {
+    override fun onCharacteristicWriteRequest(device: BluetoothDevice?, requestId: Int, characteristic: BluetoothGattCharacteristic?, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray) {
+        super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value)
+        if (characteristic == null || device == null) return
+        Timber.d("Received Characteristic write request")
+        when (characteristic){
+            heartBeatCharacteristic -> {
+                Timber.d("For HEALTHCHECK")
+                authenticatedDevices[device.address]?.lastHeartBeat = System.currentTimeMillis()
+                bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+            }
+            authenticationCharacteristic -> {
+                Timber.d("For AUTH")
                 // Special auth characteristic
-                    val receivedCode = String(value)
+                val receivedCode = String(value)
 
-                    if (receivedCode == AppConstants.AuthenticationSecretCode) {
-                        Timber.d("Device authenticated: ${device.address}")
-                        monitor.addDevice(device)
+                if (receivedCode == AppConstants.AuthenticationSecretCode) {
+                    Timber.d("Device authenticated: ${device.address}")
+                    monitor.addDevice(device)
 
-                        bluetoothGattServer?.sendResponse(
-                            device,
-                            requestId,
-                            BluetoothGatt.GATT_SUCCESS,
-                            0,
-                            byteArrayOf(0x01) // Auth success
-                        )
-                    } else {
-                        Timber.w("Auth failed for ${device.address}")
-                        bluetoothGattServer?.sendResponse(
-                            device,
-                            requestId,
-                            BluetoothGatt.GATT_FAILURE,
-                            0,
-                            byteArrayOf(0x00) // Auth failed
-                        )
-                    }
-                    return
+                    bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, byteArrayOf(0x01))
+                    // notify the client
+                    authenticationCharacteristic.value = byteArrayOf(0x01)
+                    bluetoothGattServer?.notifyCharacteristicChanged(device, authenticationCharacteristic, false)
+
+                } else {
+                    Timber.w("Auth failed for ${device.address}")
+                    bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, offset, byteArrayOf(0x00))
+                    authenticationCharacteristic.value = byteArrayOf(0x00)
+                    bluetoothGattServer?.notifyCharacteristicChanged(device, authenticationCharacteristic, false)
+
                 }
             }
-            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+        }
         }
     }
 /* -------------------------------SERVICES-&-CHARACTERISTICS--------------------------------------------------*/
